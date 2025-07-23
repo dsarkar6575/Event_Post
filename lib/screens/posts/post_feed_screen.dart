@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/providers/post_provider.dart';
-import 'package:myapp/utils/app_router.dart';
 import 'package:myapp/widgets/post_card.dart';
 
 class PostFeedScreen extends StatefulWidget {

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/providers/post_provider.dart';
+import 'package:myapp/widgets/created_event_tab.dart';
+import 'package:myapp/widgets/interested_event_tab.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/providers/user_provider.dart';
 import 'package:myapp/utils/app_router.dart';
-import 'package:myapp/widgets/post_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userId;
@@ -147,67 +147,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    // User Posts Tab
-                    userProvider.userPosts.isEmpty
-                        ? const Center(child: Text('No posts by this user yet.'))
-                        : ListView.builder(
-                            itemCount: userProvider.userPosts.length,
-                            itemBuilder: (context, index) {
-                              final post = userProvider.userPosts[index];
-                              return PostCard(
-                                post: post,
-                                currentUserId: currentUserId,
-                                onToggleInterest: () async {
-                                  if (currentUserId != null) {
-                                    await Provider.of<PostProvider>(context, listen: false).togglePostInterest(post.id, currentUserId);
-                                    await userProvider.fetchUserPosts(widget.userId); // Refresh user's posts
-                                  }
-                                },
-                                onDelete: () async {
-                                  await Provider.of<PostProvider>(context, listen: false).deletePost(post.id);
-                                  await userProvider.fetchUserPosts(widget.userId); // Refresh user's posts
-                                },
-                              );
-                            },
-                          ),
-                    // Interested Posts Tab (Only visible for current user's profile)
-                    Consumer<PostProvider>(
-                      builder: (context, postProvider, child) {
-                        if (isMyProfile) {
-                          if (postProvider.isLoading && postProvider.interestedPosts.isEmpty) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          if (postProvider.error != null) {
-                            return Center(child: Text('Error: ${postProvider.error}'));
-                          }
-                          if (postProvider.interestedPosts.isEmpty) {
-                            return const Center(child: Text('You haven\'t marked any posts as interested yet.'));
-                          }
-                          return ListView.builder(
-                            itemCount: postProvider.interestedPosts.length,
-                            itemBuilder: (context, index) {
-                              final post = postProvider.interestedPosts[index];
-                              return PostCard(
-                                post: post,
-                                currentUserId: currentUserId,
-                                onToggleInterest: () async {
-                                  if (currentUserId != null) {
-                                    await postProvider.togglePostInterest(post.id, currentUserId);
-                                    await postProvider.fetchInterestedPosts(); // Refresh interested posts
-                                  }
-                                },
-                                onDelete: () async {
-                                  await postProvider.deletePost(post.id);
-                                  await postProvider.fetchInterestedPosts();
-                                },
-                              );
-                            },
-                          );
-                        } else {
-                          return const Center(child: Text('Interested posts are only visible on your own profile.'));
-                        }
-                      },
-                    ),
+                    CreatedEventsTab(),
+                    InterestedEventsTab()
                   ],
                 ),
               ),
