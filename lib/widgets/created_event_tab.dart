@@ -11,7 +11,6 @@ class CreatedEventsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final postProvider = Provider.of<PostProvider>(context);
     final currentUserId = Provider.of<AuthProvider>(context).currentUser?.id;
-    print("Current User ID: $currentUserId");
 
     if (postProvider.isLoading && postProvider.posts.isEmpty) {
       return const Center(child: CircularProgressIndicator());
