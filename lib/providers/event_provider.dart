@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/models/notification_model.dart';
 import 'package:myapp/services/notification_service.dart';
 
-class NotificationProvider extends ChangeNotifier {
+class EventProvider extends ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
   List<AppNotification> _notifications = [];
   bool _isLoading = false;
@@ -31,7 +31,8 @@ class NotificationProvider extends ChangeNotifier {
   Future<void> markNotificationAsRead(String notificationId) async {
     _error = null;
     try {
-      final updatedNotification = await _notificationService.markNotificationAsRead(notificationId);
+      final updatedNotification = await _notificationService
+          .markNotificationAsRead(notificationId);
       final index = _notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
         _notifications[index] = updatedNotification;
@@ -59,7 +60,8 @@ class NotificationProvider extends ChangeNotifier {
 
   // Method to add new notification received via Socket.IO
   void addNotification(AppNotification notification) {
-    if (_notifications.any((n) => n.id == notification.id)) return; // Avoid duplicates
+    if (_notifications.any((n) => n.id == notification.id))
+      return; // Avoid duplicates
     _notifications.insert(0, notification);
     notifyListeners();
   }

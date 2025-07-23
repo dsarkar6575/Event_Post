@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/auth_provider.dart';
-import 'package:myapp/providers/notification_provider.dart';
+import 'package:myapp/providers/event_provider.dart';
 import 'package:myapp/screens/chat/chat_list_screen.dart';
-import 'package:myapp/screens/notifications/notification_screen.dart';
+import 'package:myapp/screens/event/event_screen.dart';
 import 'package:myapp/screens/posts/create_post_screen.dart';
 import 'package:myapp/screens/posts/post_feed_screen.dart';
 import 'package:myapp/screens/profile/profile_screen.dart';
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const PostFeedScreen(),
     const ChatListScreen(),
     const CreatePostScreen(),
-    const NotificationScreen(),
+    const EventFeedScreen(),
     // Placeholder for own profile, will navigate
     Builder(
       builder: (context) {
@@ -42,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final notificationProvider = Provider.of<NotificationProvider>(context);
+    final eventProvider = Provider.of<EventProvider>(context);
 
     // If for some reason user is null, navigate back to login
     if (!authProvider.isAuthenticated) {
@@ -57,26 +58,55 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Event App'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await authProvider.logout();
-              Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                await authProvider.logout();
+                Navigator.of(
+                  context,
+                ).pushReplacementNamed(AppRouter.loginRoute);
+              } else if (value == 'dark_mode') {
+                // Replace this with your actual theme toggle logic
+                final themeProvider = Provider.of<ThemeProvider>(
+                  context,
+                  listen: false,
+                );
+                themeProvider.toggleTheme();
+              }
             },
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout, color: Colors.black54),
+                        SizedBox(width: 10),
+                        Text('Logout'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'dark_mode',
+                    child: Row(
+                      children: [
+                        Icon(Icons.brightness_6, color: Colors.black54),
+                        SizedBox(width: 10),
+                        Text('Toggle Dark Mode'),
+                      ],
+                    ),
+                  ),
+                ],
           ),
         ],
       ),
+
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chats',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          const BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
           const BottomNavigationBarItem(
             icon: Icon(Icons.add_box),
             label: 'Post',
@@ -84,8 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Stack(
               children: [
-                const Icon(Icons.notifications),
-                if (notificationProvider.unreadCount > 0)
+                const Icon(Icons.event),
+                if (eventProvider.unreadCount > 0)
                   Positioned(
                     right: 0,
                     child: Container(
@@ -99,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         minHeight: 12,
                       ),
                       child: Text(
-                        '${notificationProvider.unreadCount}',
+                        '${eventProvider.unreadCount}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8,
@@ -107,10 +137,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  )
+                  ),
               ],
             ),
-            label: 'Notifications',
+            label: 'Events',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.person),

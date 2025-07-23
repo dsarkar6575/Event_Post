@@ -32,52 +32,59 @@ class Post {
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
-  print('🔥 Parsing Post JSON: $json');
+    print('🔥 Parsing Post JSON: $json');
 
-  // Safe author parsing
-  User? parsedAuthor;
-  String authorId = '';
+    // Safe author parsing
+    User? parsedAuthor;
+    String authorId = '';
 
-  if (json['author'] is Map<String, dynamic>) {
-    try {
-      parsedAuthor = User.fromJson(json['author']);
-      authorId = json['author']['_id']?.toString() ?? '';
-    } catch (e) {
-      print('❌ Error parsing author: $e');
+    if (json['author'] is Map<String, dynamic>) {
+      try {
+        parsedAuthor = User.fromJson(json['author']);
+        authorId = json['author']['_id']?.toString() ?? '';
+      } catch (e) {
+        print('❌ Error parsing author: $e');
+      }
+    } else if (json['author'] is String) {
+      authorId = json['author'];
+    } else {
+      print('❗ Unexpected author type: ${json['author']}');
     }
-  } else if (json['author'] is String) {
-    authorId = json['author'];
-  } else {
-    print('❗ Unexpected author type: ${json['author']}');
+
+    return Post(
+      id: json['_id']?.toString() ?? 'UNKNOWN_ID',
+      authorId: authorId,
+      author: parsedAuthor,
+      title: json['title']?.toString() ?? 'Untitled',
+      description: json['description']?.toString() ?? '',
+      mediaUrls:
+          (json['mediaUrls'] is List)
+              ? List<String>.from(json['mediaUrls'].whereType<String>())
+              : [],
+      isEvent: json['isEvent'] == true,
+      eventDateTime:
+          json['eventDateTime'] != null
+              ? DateTime.tryParse(json['eventDateTime'].toString())
+              : null,
+      location: json['location']?.toString(),
+      interestedUsers:
+          (json['interestedUsers'] is List)
+              ? List<String>.from(json['interestedUsers'].whereType<String>())
+              : [],
+      interestedCount:
+          json['interestedCount'] is int
+              ? json['interestedCount']
+              : int.tryParse(json['interestedCount']?.toString() ?? '0') ?? 0,
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt']?.toString() ?? '') ??
+          DateTime.now(),
+    );
   }
 
-  return Post(
-    id: json['_id']?.toString() ?? 'UNKNOWN_ID',
-    authorId: authorId,
-    author: parsedAuthor,
-    title: json['title']?.toString() ?? 'Untitled',
-    description: json['description']?.toString() ?? '',
-    mediaUrls: (json['mediaUrls'] is List)
-        ? List<String>.from(json['mediaUrls'].whereType<String>())
-        : [],
-    isEvent: json['isEvent'] == true,
-    eventDateTime: json['eventDateTime'] != null
-        ? DateTime.tryParse(json['eventDateTime'].toString())
-        : null,
-    location: json['location']?.toString(),
-    interestedUsers: (json['interestedUsers'] is List)
-        ? List<String>.from(json['interestedUsers'].whereType<String>())
-        : [],
-    interestedCount: json['interestedCount'] is int
-        ? json['interestedCount']
-        : int.tryParse(json['interestedCount']?.toString() ?? '0') ?? 0,
-    createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
-        DateTime.now(),
-    updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ??
-        DateTime.now(),
-  );
-}
-
+  // get creatorId => null;
 
   Map<String, dynamic> toJson() {
     return {

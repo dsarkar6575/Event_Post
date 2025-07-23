@@ -4,7 +4,7 @@ import 'package:myapp/screens/auth/register_screen.dart';
 import 'package:myapp/screens/chat/chat_list_screen.dart';
 import 'package:myapp/screens/chat/chat_screen.dart';
 import 'package:myapp/screens/home/home_screen.dart';
-import 'package:myapp/screens/notifications/notification_screen.dart';
+import 'package:myapp/screens/event/event_screen.dart';
 import 'package:myapp/screens/posts/create_post_screen.dart';
 import 'package:myapp/screens/posts/post_detail_screen.dart';
 import 'package:myapp/screens/posts/post_feed_screen.dart';
@@ -23,7 +23,7 @@ class AppRouter {
   static const String chatRoute = '/chat/:chatId';
   static const String profileRoute = '/profile/:userId';
   static const String editProfileRoute = '/edit_profile';
-  static const String notificationRoute = '/notifications';
+  static const String eventRoute = '/event';
   static const String commentsRoute = '/post/:postId/comments';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -41,8 +41,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const PostFeedScreen());
       case createPostRoute:
         return MaterialPageRoute(builder: (_) => const CreatePostScreen());
-      case notificationRoute:
-        return MaterialPageRoute(builder: (_) => const NotificationScreen());
+      case eventRoute:
+        return MaterialPageRoute(builder: (_) => const EventFeedScreen());
       case chatListRoute:
         return MaterialPageRoute(builder: (_) => const ChatListScreen());
       case editProfileRoute:
