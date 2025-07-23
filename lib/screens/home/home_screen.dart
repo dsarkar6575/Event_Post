@@ -62,40 +62,28 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.menu),
             onSelected: (value) async {
               if (value == 'logout') {
-                await authProvider.logout();
+                await Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                ).logout();
                 Navigator.of(
                   context,
                 ).pushReplacementNamed(AppRouter.loginRoute);
-              } else if (value == 'dark_mode') {
-                // Replace this with your actual theme toggle logic
+              } else if (value == 'toggle_theme') {
                 final themeProvider = Provider.of<ThemeProvider>(
                   context,
                   listen: false,
                 );
-                themeProvider.toggleTheme();
+                final isDark = themeProvider.themeMode == ThemeMode.dark;
+                themeProvider.toggleTheme(!isDark);
               }
             },
             itemBuilder:
                 (context) => [
+                  const PopupMenuItem(value: 'logout', child: Text('Logout')),
                   const PopupMenuItem(
-                    value: 'logout',
-                    child: Row(
-                      children: [
-                        Icon(Icons.logout, color: Colors.black54),
-                        SizedBox(width: 10),
-                        Text('Logout'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'dark_mode',
-                    child: Row(
-                      children: [
-                        Icon(Icons.brightness_6, color: Colors.black54),
-                        SizedBox(width: 10),
-                        Text('Toggle Dark Mode'),
-                      ],
-                    ),
+                    value: 'toggle_theme',
+                    child: Text('Toggle Dark Mode'),
                   ),
                 ],
           ),
