@@ -78,7 +78,6 @@ class _CommentsScreenState extends State<CommentsScreen> {
                 : _comments.isEmpty
                     ? const Center(child: Text('No comments yet.'))
                     : ListView.builder(
-                        reverse: true,
                         itemCount: _comments.length,
                         itemBuilder: (ctx, index) {
                           final comment = _comments[index];

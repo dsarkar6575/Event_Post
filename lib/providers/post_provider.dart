@@ -1,3 +1,4 @@
+// providers/post_provider.dart
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -61,14 +62,16 @@ class PostProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updatePost(String postId, {
+  Future<void> updatePost(
+    String postId, {
     String? title,
     String? description,
-    List<String>? mediaUrls,
+    List<String>? mediaUrls, // This is not used directly for update, newMediaFile is used.
     bool? isEvent,
     DateTime? eventDateTime,
     String? location,
     File? newMediaFile,
+    bool? clearExistingMedia, // Add this parameter
   }) async {
     _isLoading = true;
     _error = null;
@@ -78,16 +81,19 @@ class PostProvider extends ChangeNotifier {
         postId,
         title: title,
         description: description,
-        mediaUrls: mediaUrls,
+        // mediaUrls: mediaUrls, // This parameter is not needed here
         isEvent: isEvent,
         eventDateTime: eventDateTime,
         location: location,
         newMediaFile: newMediaFile,
+        clearExistingMedia: clearExistingMedia, // Pass the flag
       );
       final index = _posts.indexWhere((post) => post.id == postId);
       if (index != -1) {
         _posts[index] = updatedPost;
       }
+      // Success case: Clear any previous error and show success message
+      _error = null; // Important: Clear error on success
     } catch (e) {
       _error = e.toString();
       print('Update Post Error: $_error');

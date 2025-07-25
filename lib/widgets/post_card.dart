@@ -82,10 +82,10 @@ class PostCard extends StatelessWidget {
                     PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'edit') {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Edit Post not yet implemented.'),
-                            ),
+                          // Navigate to EditPostScreen
+                          Navigator.of(context).pushNamed(
+                            AppRouter.editPostRoute.replaceFirst(':id', post.id),
+                            arguments: post, // Pass the post object
                           );
                         } else if (value == 'delete') {
                           onDelete?.call();
@@ -202,7 +202,7 @@ class PostCard extends StatelessWidget {
                       () {
                         Navigator.of(
                           context,
-                        ).pushNamed('/post/${post.id}/comments');
+                        ).pushNamed(AppRouter.commentsRoute.replaceFirst(':postId', post.id));
                       },
                   icon: const Icon(Icons.comment, color: Colors.blueGrey),
                   label: const Text('Comment'),

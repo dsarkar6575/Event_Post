@@ -29,7 +29,7 @@ class UserService {
     if (profileImage != null) {
       final mimeTypeData = lookupMimeType(profileImage.path)?.split('/');
       files.add(await http.MultipartFile.fromPath(
-        'profileImage', // This should match the field name on your backend for profile image
+        'profileImageUrl', // This should match the field name on your backend for profile image
         profileImage.path,
         contentType: mimeTypeData != null ? MediaType(mimeTypeData[0], mimeTypeData[1]) : null,
         filename: p.basename(profileImage.path),
