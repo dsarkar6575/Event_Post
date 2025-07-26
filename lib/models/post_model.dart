@@ -11,6 +11,7 @@ class Post {
   final DateTime? eventDateTime;
   final String? location;
   final List<String> interestedUsers;
+  final List<String> attendedUsers;
   final int interestedCount;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -26,6 +27,7 @@ class Post {
     this.eventDateTime,
     this.location,
     this.interestedUsers = const [],
+    this.attendedUsers = const [],
     this.interestedCount = 0,
     required this.createdAt,
     required this.updatedAt,
@@ -71,6 +73,9 @@ class Post {
           (json['interestedUsers'] is List)
               ? List<String>.from(json['interestedUsers'].whereType<String>())
               : [],
+      attendedUsers: (json['attendedUsers'] is List)
+          ? List<String>.from(json['attendedUsers'].whereType<String>())
+          : [], 
       interestedCount:
           json['interestedCount'] is int
               ? json['interestedCount']
@@ -97,6 +102,7 @@ class Post {
       'eventDateTime': eventDateTime?.toIso8601String(),
       'location': location,
       'interestedUsers': interestedUsers,
+      'attendedUsers': attendedUsers, 
       'interestedCount': interestedCount,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),

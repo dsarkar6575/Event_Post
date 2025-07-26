@@ -23,10 +23,12 @@ class AttendedEventsTab extends StatelessWidget {
     final now = DateTime.now();
 
     final attendedPosts = postProvider.posts.where((post) {
-      final isInterested = post.interestedUsers.contains(currentUserId);
-      final isPastEvent = post.eventDateTime != null && post.eventDateTime!.isBefore(now);
-      return post.isEvent && isInterested && isPastEvent;
-    }).toList();
+  final isInterested = post.interestedUsers.contains(currentUserId);
+  final isPastEvent = post.eventDateTime != null && post.eventDateTime!.isBefore(now);
+  final isAttended = post.attendedUsers.contains(currentUserId);
+  return post.isEvent && isInterested && isPastEvent && isAttended;
+}).toList();
+
 
     if (attendedPosts.isEmpty) {
       return const Center(child: Text("No attended events yet."));

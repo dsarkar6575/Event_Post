@@ -4,13 +4,15 @@ import 'package:myapp/models/post_model.dart';
 import 'package:myapp/utils/app_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-class PostCard extends StatelessWidget {
+
+class PostCard extends StatefulWidget { // Changed to StatefulWidget
   final Post post;
   final String? currentUserId;
   final VoidCallback? onToggleInterest;
   final VoidCallback? onDelete;
   final VoidCallback? onComment;
   final VoidCallback? onShare;
+  final Future<void> Function(String postId)? onMarkAttended;
 
   const PostCard({
     super.key,
@@ -20,12 +22,39 @@ class PostCard extends StatelessWidget {
     this.onDelete,
     this.onComment,
     this.onShare,
+    this.onMarkAttended,
   });
 
   @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard> {
+  // We'll manage a local copy of the post to update its attendance status
+  late Post _post;
+
+  @override
+  void initState() {
+    super.initState();
+    _post = widget.post; // Initialize with the post from the widget
+  }
+
+  // If the parent widget provides a new post, update our local copy
+  @override
+  void didUpdateWidget(covariant PostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.post.id != oldWidget.post.id ||
+        widget.post.interestedUsers.length != oldWidget.post.interestedUsers.length ||
+        widget.post.attendedUsers.length != oldWidget.post.attendedUsers.length) {
+      _post = widget.post;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isInterested = post.interestedUsers.contains(currentUserId);
-    final bool isAuthor = currentUserId == post.authorId;
+    // Use _post instead of widget.post for state-dependent properties
+    final bool isInterested = _post.interestedUsers.contains(widget.currentUserId);
+    final bool isAuthor = widget.currentUserId == _post.authorId;
 
     return Card(
       margin: const EdgeInsets.all(8.0),
@@ -38,11 +67,11 @@ class PostCard extends StatelessWidget {
             // AUTHOR INFO SECTION
             GestureDetector(
               onTap: () {
-                if (post.author?.id != null) {
+                if (_post.author?.id != null) {
                   Navigator.of(context).pushNamed(
                     AppRouter.profileRoute.replaceFirst(
                       ':userId',
-                      post.author!.id,
+                      _post.author!.id,
                     ),
                   );
                 }
@@ -50,14 +79,12 @@ class PostCard extends StatelessWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage:
-                        post.author?.profileImageUrl != null
-                            ? NetworkImage(post.author!.profileImageUrl!)
-                            : null,
-                    child:
-                        post.author?.profileImageUrl == null
-                            ? Text(post.author?.username[0].toUpperCase() ?? '')
-                            : null,
+                    backgroundImage: _post.author?.profileImageUrl != null
+                        ? NetworkImage(_post.author!.profileImageUrl!)
+                        : null,
+                    child: _post.author?.profileImageUrl == null
+                        ? Text(_post.author?.username[0].toUpperCase() ?? '')
+                        : null,
                   ),
                   const SizedBox(width: 8.0),
                   Expanded(
@@ -65,11 +92,11 @@ class PostCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          post.author?.username ?? 'Unknown User',
+                          _post.author?.username ?? 'Unknown User',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          timeago.format(post.createdAt),
+                          timeago.format(_post.createdAt),
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
@@ -82,26 +109,25 @@ class PostCard extends StatelessWidget {
                     PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'edit') {
-                          // Navigate to EditPostScreen
                           Navigator.of(context).pushNamed(
-                            AppRouter.editPostRoute.replaceFirst(':id', post.id),
-                            arguments: post, // Pass the post object
+                            AppRouter.editPostRoute.replaceFirst(':id', _post.id),
+                            arguments: _post,
                           );
                         } else if (value == 'delete') {
-                          onDelete?.call();
+                          widget.onDelete?.call();
                         }
                       },
-                      itemBuilder:
-                          (BuildContext context) => <PopupMenuEntry<String>>[
-                            const PopupMenuItem<String>(
-                              value: 'edit',
-                              child: Text('Edit Post'),
-                            ),
-                            const PopupMenuItem<String>(
-                              value: 'delete',
-                              child: Text('Delete Post'),
-                            ),
-                          ],
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Text('Edit Post'),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Text('Delete Post'),
+                        ),
+                      ],
                     ),
                 ],
               ),
@@ -113,14 +139,14 @@ class PostCard extends StatelessWidget {
             GestureDetector(
               onTap: () {
                 Navigator.of(context).pushNamed(
-                  AppRouter.postDetailRoute.replaceFirst(':id', post.id),
+                  AppRouter.postDetailRoute.replaceFirst(':id', _post.id),
                 );
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    post.title,
+                    _post.title,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -128,33 +154,32 @@ class PostCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8.0),
                   Text(
-                    post.description,
+                    _post.description,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 14),
                   ),
-                  if (post.mediaUrls.isNotEmpty)
+                  if (_post.mediaUrls.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Image.network(
-                        post.mediaUrls.first,
+                        _post.mediaUrls.first,
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder:
-                            (context, error, stackTrace) =>
-                                const Icon(Icons.image_not_supported),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image_not_supported),
                       ),
                     ),
-                  if (post.isEvent) ...[
+                  if (_post.isEvent) ...[
                     const SizedBox(height: 8.0),
                     Row(
                       children: [
                         const Icon(Icons.event_note, size: 16),
                         const SizedBox(width: 4),
                         Text(
-                          post.eventDateTime != null
-                              ? 'Event: ${DateFormat('MMM d, HH:mm').format(post.eventDateTime!)}'
+                          _post.eventDateTime != null
+                              ? 'Event: ${DateFormat('MMM d, HH:mm').format(_post.eventDateTime!)}'
                               : 'Event',
                           style: const TextStyle(
                             fontSize: 13,
@@ -163,13 +188,13 @@ class PostCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (post.location != null && post.location!.isNotEmpty)
+                    if (_post.location != null && _post.location!.isNotEmpty)
                       Row(
                         children: [
                           const Icon(Icons.location_on, size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            post.location!,
+                            _post.location!,
                             style: const TextStyle(
                               fontSize: 13,
                               fontStyle: FontStyle.italic,
@@ -188,29 +213,65 @@ class PostCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextButton.icon(
-                  onPressed: onToggleInterest,
-                  icon: Icon(
-                    isInterested ? Icons.star : Icons.star_border,
-                    color: isInterested ? Colors.amber : Colors.grey,
-                  ),
-                  label: Text('${post.interestedCount} Interested'),
+                Builder(
+                  builder: (context) {
+                    final bool isExpired = _post.eventDateTime != null &&
+                        _post.eventDateTime!.isBefore(DateTime.now());
+                    // Use _post for these checks as well
+                    final bool isInterested =
+                        _post.interestedUsers.contains(widget.currentUserId);
+                    final bool isAttended =
+                        _post.attendedUsers.contains(widget.currentUserId);
+
+                    if (isExpired && isInterested && !isAttended) {
+                      return ElevatedButton(
+                        onPressed: () async {
+                          if (widget.onMarkAttended != null) {
+                            await widget.onMarkAttended!(_post.id);
+                            // Update the local state to reflect the change
+                            setState(() {
+                              if (widget.currentUserId != null && !_post.attendedUsers.contains(widget.currentUserId)) {
+                                _post.attendedUsers.add(widget.currentUserId!);
+                              }
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Marked as attended!")),
+                            );
+                          }
+                        },
+                        child: const Text("Attended"),
+                      );
+                    } else if (isExpired && isAttended) {
+                      return const Text("You attended",
+                          style: TextStyle(color: Colors.green));
+                    } else if (!isExpired) {
+                      return IconButton(
+                        icon: Icon(Icons.star,
+                            color: isInterested ? Colors.blue : Colors.grey),
+                        onPressed: widget.onToggleInterest,
+                      );
+                    } else {
+                      return const Icon(Icons.block,
+                          color: Colors.grey); // expired & not attended
+                    }
+                  },
                 ),
+
                 TextButton.icon(
-                  onPressed:
-                      onComment ??
+                  onPressed: widget.onComment ??
                       () {
                         Navigator.of(
                           context,
-                        ).pushNamed(AppRouter.commentsRoute.replaceFirst(':postId', post.id));
+                        ).pushNamed(
+                            AppRouter.commentsRoute.replaceFirst(':postId', _post.id));
                       },
                   icon: const Icon(Icons.comment, color: Colors.blueGrey),
                   label: const Text('Comment'),
                 ),
 
                 TextButton.icon(
-                  onPressed:
-                      onShare ??
+                  onPressed: widget.onShare ??
                       () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

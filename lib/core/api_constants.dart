@@ -26,7 +26,10 @@ class ApiConstants {
   static String updatePostEndpoint(String postId) => '/posts/$postId';
   static String deletePostEndpoint(String postId) => '/posts/$postId';
   static String togglePostInterestEndpoint(String postId) => '/posts/$postId/interest';
+  static String markAttendanceEndpoint(String postId) => '/posts/$postId/attend';
   static const String getInterestedPostsEndpoint = '/posts/my/interested';
+  static String togglePostAttendanceEndpoint(String postId) => '/posts/$postId/attend';
+  static const String getAttendedPostsEndpoint = '/posts/my/attended';
 
   // User Endpoints
   static String getUserProfileEndpoint(String userId) => '/users/$userId';

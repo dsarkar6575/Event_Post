@@ -20,10 +20,10 @@ class InterestedEventsTab extends StatelessWidget {
       return Center(child: Text('Error: ${postProvider.error}'));
     }
 
-    final interestedPosts = postProvider.posts
-        .where((post) =>
-            post.interestedUsers.contains(currentUserId) && post.isEvent)
-        .toList();
+    final interestedPosts = postProvider.posts.where((post) {
+      final isInterested = post.interestedUsers.contains(currentUserId);
+      return post.isEvent && isInterested;
+    }).toList();
 
     if (interestedPosts.isEmpty) {
       return const Center(child: Text("No events marked as interested."));
@@ -41,10 +41,18 @@ class InterestedEventsTab extends StatelessWidget {
             onToggleInterest: () async {
               if (currentUserId != null) {
                 await postProvider.togglePostInterest(post.id, currentUserId);
+                await postProvider.fetchAllPosts(); // ensure UI reflects update
+              }
+            },
+            onMarkAttended: (postId) async {
+              if (currentUserId != null) {
+                await postProvider.togglePostAttendance(postId, currentUserId);
+                await postProvider.fetchAllPosts(); // refresh UI
               }
             },
             onDelete: () async {
               await postProvider.deletePost(post.id);
+              await postProvider.fetchAllPosts(); // update after deletion
             },
           );
         },

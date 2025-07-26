@@ -11,6 +11,9 @@ class PostProvider extends ChangeNotifier {
   List<Post> _interestedPosts = [];
   bool _isLoading = false;
   String? _error;
+  List<Post> _attendedPosts = [];
+  List<Post> get attendedPosts => _attendedPosts;
+
 
   List<Post> get posts => _posts;
   List<Post> get interestedPosts => _interestedPosts;
@@ -160,4 +163,50 @@ class PostProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+Future<void> togglePostAttendance(String postId, String currentUserId) async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
+  try {
+    final updatedPost = await postService.togglePostAttendance(postId);
+    final index = _posts.indexWhere((post) => post.id == postId);
+    if (index != -1) {
+      _posts[index] = updatedPost;
+
+      // ✅ Correctly check if user has attended
+      final isAttended = updatedPost.attendedUsers.contains(currentUserId);
+      if (isAttended) {
+        if (!_attendedPosts.any((post) => post.id == updatedPost.id)) {
+          _attendedPosts.add(updatedPost);
+        }
+      } else {
+        _attendedPosts.removeWhere((post) => post.id == updatedPost.id);
+      }
+    }
+  } catch (e) {
+    _error = e.toString();
+    print('Toggle Post Attendance Error: $_error');
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
+
+
+Future<void> fetchAttendedPosts() async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
+  try {
+    _attendedPosts = await postService.getAttendedPosts();
+  } catch (e) {
+    _error = e.toString();
+    print('Fetch Attended Posts Error: $_error');
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
+
 }
