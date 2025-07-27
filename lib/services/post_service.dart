@@ -11,6 +11,20 @@ import 'package:path/path.dart' as p;
 class PostService {
   final ApiBaseService _apiService = ApiBaseService();
 
+  // Helper function to safely get MIME type
+  MediaType _getMediaType(String filePath) {
+    final mimeType = lookupMimeType(filePath);
+    if (mimeType == null) {
+      // Fallback for unknown file types, e.g., plain text or application/octet-stream
+      return MediaType('application', 'octet-stream');
+    }
+    final mimeTypeData = mimeType.split('/');
+    if (mimeTypeData.length != 2) {
+      throw FormatException('Invalid MIME type format: $mimeType');
+    }
+    return MediaType(mimeTypeData[0], mimeTypeData[1]);
+  }
+
   Future<Post> createPost({
     required String title,
     required String description,
@@ -19,42 +33,32 @@ class PostService {
     DateTime? eventDateTime,
     String? location,
   }) async {
-    final fields = <String, String>{
-      'title': title,
-      'description': description,
-      'isEvent': isEvent.toString(),
-    };
+    try {
+      final fields = <String, String>{
+        'title': title,
+        'description': description,
+        'isEvent': isEvent.toString(),
+      };
 
-    if (isEvent && eventDateTime != null) {
-      fields['eventDateTime'] = eventDateTime.toIso8601String();
-    }
+      if (isEvent && eventDateTime != null) {
+        fields['eventDateTime'] = eventDateTime.toIso8601String();
+      }
 
-    if (location != null && location.isNotEmpty) {
-      fields['location'] = location;
-    }
+      if (location != null && location.isNotEmpty) {
+        fields['location'] = location;
+      }
 
-    List<http.MultipartFile> files = [];
+      List<http.MultipartFile> files = [];
 
-    if (mediaFile != null) {
-      try {
-        final mimeTypeData = lookupMimeType(mediaFile.path)?.split('/');
-        if (mimeTypeData == null || mimeTypeData.length != 2) {
-          throw Exception('Unsupported file type');
-        }
-
+      if (mediaFile != null) {
         files.add(await http.MultipartFile.fromPath(
-          'mediaUrls',
+          'mediaUrls', // This should match the backend's expected field name for file uploads
           mediaFile.path,
-          contentType: MediaType(mimeTypeData[0], mimeTypeData[1]),
+          contentType: _getMediaType(mediaFile.path),
           filename: p.basename(mediaFile.path),
         ));
-      } catch (e) {
-        print('Error preparing media file: $e');
-        throw Exception('Failed to prepare media file for upload');
       }
-    }
 
-    try {
       final response = await _apiService.postMultipart(
         ApiConstants.createPostEndpoint,
         fields,
@@ -64,23 +68,25 @@ class PostService {
       print('CreatePost Response: $response');
 
       if (response == null) {
-        throw Exception('API response is null');
+        throw Exception('API response is null for createPost.');
       }
 
+      // Assuming API returns {'error': 'message'} or {'message': 'error'} for failures
       if (response.containsKey('error') || response.containsKey('message')) {
-        final errorMessage = response['error'] ?? response['message'];
+        final errorMessage = response['error'] ?? response['message'] ?? 'Unknown error during post creation.';
         throw Exception('API Error: $errorMessage');
       }
 
+      // Consistently expect 'post' key for single post responses
       if (response['post'] == null) {
-        throw Exception('API response does not contain post data');
+        throw Exception('API response for createPost does not contain post data under "post" key.');
       }
 
       return Post.fromJson(response['post']);
     } catch (e, stackTrace) {
       print('Error in createPost: $e');
       print('StackTrace: $stackTrace');
-      rethrow;
+      rethrow; // Re-throw to propagate to PostProvider
     }
   }
 
@@ -93,17 +99,22 @@ class PostService {
       if (response is List) {
         print('Response is a List. Mapping to Posts...');
         final List<Post> posts = response.map((postJson) {
-          print('Processing post JSON: $postJson');
           try {
             return Post.fromJson(postJson);
           } catch (e) {
-            print('Error parsing post JSON: $e');
+            print('Error parsing individual post JSON: $e');
             print('Post JSON causing error: $postJson');
-            rethrow;
+            // Do not rethrow here, allow other posts to be parsed.
+            // Consider logging this error and returning null or a default post,
+            // or filter out invalid posts after mapping. For now, rethrow to highlight the issue.
+            rethrow; // Re-throwing here will stop the entire list from being processed.
+                     // If you want to skip malformed posts, catch and return null, then filter list.
           }
         }).toList();
         print('Successfully mapped to Posts. Count: ${posts.length}');
         return posts;
+      } else if (response is Map<String, dynamic> && response.containsKey('error')) {
+        throw Exception('API Error: ${response['error']}');
       } else {
         print('Unexpected response format in getAllPosts: $response');
         throw Exception('Failed to load posts due to unexpected response format.');
@@ -119,21 +130,25 @@ class PostService {
       final response = await _apiService.get(ApiConstants.getPostByIdEndpoint(postId));
       print('API Response for getPostById($postId): $response');
 
-      if (response != null && response is Map<String, dynamic>) {
-        // Ensure the response directly represents the Post, not nested in a 'post' key
-        // If your API returns {'post': {...}} then use Post.fromJson(response['post'])
-        // If your API returns {...} directly, use Post.fromJson(response)
-        // Based on your togglePostAttendance and togglePostInterest, it seems it's nested
+      if (response == null) {
+        throw Exception('Null response from server for getPostById.');
+      }
+
+      if (response is Map<String, dynamic>) {
+        // Consistent parsing: expect 'post' key for single post responses
         if (response.containsKey('post')) {
           return Post.fromJson(response['post']);
+        } else if (response.containsKey('error')) {
+          throw Exception('API Error: ${response['error']}');
         }
-        return Post.fromJson(response); // Fallback if not nested
+        // Fallback for direct post object if no 'post' key, but prefer consistency
+        return Post.fromJson(response); 
       } else {
-        throw Exception('Invalid response format or post not found');
+        throw Exception('Invalid response format or post not found for getPostById.');
       }
     } catch (e) {
       print('Error in getPostById: $e');
-      rethrow; // Re-throw to be handled by caller
+      rethrow;
     }
   }
 
@@ -145,52 +160,52 @@ class PostService {
     DateTime? eventDateTime,
     String? location,
     File? newMediaFile,
-    bool? clearExistingMedia,
+    bool? clearExistingMedia, // This field should ideally be processed by backend logic.
   }) async {
-    final fields = <String, String>{};
-
-    if (title != null) fields['title'] = title;
-    if (description != null) fields['description'] = description;
-    if (isEvent != null) fields['isEvent'] = isEvent.toString();
-    if (eventDateTime != null) fields['eventDateTime'] = eventDateTime.toIso8601String();
-    if (location != null) fields['location'] = location;
-    if (clearExistingMedia != null && clearExistingMedia) fields['clearExistingMedia'] = 'true';
-
-    List<http.MultipartFile> files = [];
-
-    if (newMediaFile != null) {
-      try {
-        final mimeTypeData = lookupMimeType(newMediaFile.path)?.split('/');
-        files.add(await http.MultipartFile.fromPath(
-          'mediaUrls',
-          newMediaFile.path,
-          contentType: MediaType(mimeTypeData?[0] ?? 'image', mimeTypeData?[1] ?? 'jpeg'),
-        ));
-      } catch (e) {
-        print('Error preparing media file: $e');
-        throw Exception('Failed to prepare media file for upload');
-      }
-    }
-
     try {
+      final fields = <String, String>{};
+
+      if (title != null) fields['title'] = title;
+      if (description != null) fields['description'] = description;
+      if (isEvent != null) fields['isEvent'] = isEvent.toString();
+      if (eventDateTime != null) fields['eventDateTime'] = eventDateTime.toIso8601String();
+      if (location != null) fields['location'] = location;
+      // Pass clearExistingMedia as a string 'true'/'false' if backend expects it as a field
+      if (clearExistingMedia != null) fields['clearExistingMedia'] = clearExistingMedia.toString();
+
+      List<http.MultipartFile> files = [];
+
+      if (newMediaFile != null) {
+        files.add(await http.MultipartFile.fromPath(
+          'mediaUrls', // Backend field name for new media
+          newMediaFile.path,
+          contentType: _getMediaType(newMediaFile.path),
+          filename: p.basename(newMediaFile.path),
+        ));
+      }
+
       final response = await _apiService.putMultipart(
         ApiConstants.updatePostEndpoint(postId),
         fields,
         files,
       );
 
-      if (response == null) throw Exception('Null response from server');
+      if (response == null) {
+        throw Exception('Null response from server for updatePost.');
+      }
 
-      // The update endpoint should ideally return the updated post directly
       if (response.containsKey('post')) {
         return Post.fromJson(response['post']);
       } else if (response.containsKey('error')) {
-        throw Exception(response['error']);
-      } else {
-        // If the update response doesn't contain the post, explicitly fetch it
-        print('Update response missing "post" key. Fetching updated post by ID.');
-        return await getPostById(postId);
+        throw Exception('API Error: ${response['error']}');
+      } else if (response.containsKey('message')) { // Handle generic message for errors too
+        throw Exception('API Error: ${response['message']}');
       }
+      // If the update response doesn't contain the updated post or an error,
+      // it might indicate an issue, or the API expects a subsequent fetch.
+      // Revert to fetching by ID as a robust fallback.
+      print('Update response missing "post" key. Attempting to fetch updated post by ID for consistency.');
+      return await getPostById(postId);
     } catch (e) {
       print('Error updating post: $e');
       rethrow;
@@ -199,7 +214,14 @@ class PostService {
 
   Future<void> deletePost(String postId) async {
     try {
-      await _apiService.delete(ApiConstants.deletePostEndpoint(postId));
+      // Assuming _apiService.delete handles response parsing and error throwing
+      final response = await _apiService.delete(ApiConstants.deletePostEndpoint(postId));
+
+      if (response != null && response.containsKey('error')) {
+        throw Exception('API Error: ${response['error']}');
+      }
+      // You might want to check for a success message here if your API returns one,
+      // e.g., if (response?['message'] != 'Post deleted successfully') throw ...
     } catch (e) {
       print('Error deleting post: $e');
       rethrow;
@@ -210,12 +232,21 @@ class PostService {
     try {
       final response = await _apiService.put(
         ApiConstants.togglePostInterestEndpoint(postId),
-        {}, // Empty body as per API description
+        {}, // Empty body, assuming the endpoint infers user from authentication token
       );
-      if (response == null || !response.containsKey('post')) { // Check for 'post' key
-        throw Exception('Failed to toggle interest: Invalid response or missing post data');
+
+      if (response == null) {
+        throw Exception('Null response from server for togglePostInterest.');
       }
-      return Post.fromJson(response['post']); // Parse the nested 'post'
+
+      // Consistently expect 'post' key
+      if (response.containsKey('post')) {
+        return Post.fromJson(response['post']);
+      } else if (response.containsKey('error')) {
+        throw Exception('API Error: ${response['error']}');
+      } else {
+        throw Exception('Failed to toggle interest: Invalid response format or missing post data.');
+      }
     } catch (e) {
       print('Error toggling post interest: $e');
       rethrow;
@@ -225,10 +256,13 @@ class PostService {
   Future<List<Post>> getInterestedPosts() async {
     try {
       final response = await _apiService.get(ApiConstants.getInterestedPostsEndpoint);
+
       if (response is List) {
         return response.map((postJson) => Post.fromJson(postJson)).toList();
+      } else if (response is Map<String, dynamic> && response.containsKey('error')) {
+        throw Exception('API Error: ${response['error']}');
       } else {
-        throw Exception('Failed to load interested posts: Invalid response format');
+        throw Exception('Failed to load interested posts: Invalid response format.');
       }
     } catch (e) {
       print('Error fetching interested posts: $e');
@@ -242,11 +276,19 @@ class PostService {
         ApiConstants.togglePostAttendanceEndpoint(postId),
         {}, // No body needed
       );
-      // Ensure the response contains the updated 'post' object
-      if (response == null || !response.containsKey('post')) {
-        throw Exception('Failed to toggle attendance: Invalid response or missing post data');
+
+      if (response == null) {
+        throw Exception('Null response from server for togglePostAttendance.');
       }
-      return Post.fromJson(response['post']); // Parse the nested 'post'
+
+      // Consistently expect 'post' key
+      if (response.containsKey('post')) {
+        return Post.fromJson(response['post']);
+      } else if (response.containsKey('error')) {
+        throw Exception('API Error: ${response['error']}');
+      } else {
+        throw Exception('Failed to toggle attendance: Invalid response format or missing post data.');
+      }
     } catch (e) {
       print('Error toggling post attendance: $e');
       rethrow;
@@ -256,10 +298,13 @@ class PostService {
   Future<List<Post>> getAttendedPosts() async {
     try {
       final response = await _apiService.get(ApiConstants.getAttendedPostsEndpoint);
+
       if (response is List) {
         return response.map((postJson) => Post.fromJson(postJson)).toList();
+      } else if (response is Map<String, dynamic> && response.containsKey('error')) {
+        throw Exception('API Error: ${response['error']}');
       } else {
-        throw Exception('Failed to load attended posts: Invalid response format');
+        throw Exception('Failed to load attended posts: Invalid response format.');
       }
     } catch (e) {
       print('Error fetching attended posts: $e');
