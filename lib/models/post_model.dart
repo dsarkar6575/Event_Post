@@ -75,7 +75,7 @@ class Post {
               : [],
       attendedUsers: (json['attendedUsers'] is List)
           ? List<String>.from(json['attendedUsers'].whereType<String>())
-          : [], 
+          : [],
       interestedCount:
           json['interestedCount'] is int
               ? json['interestedCount']
@@ -89,7 +89,40 @@ class Post {
     );
   }
 
-  // get creatorId => null;
+  // Add the copyWith method here
+  Post copyWith({
+    String? id,
+    String? authorId,
+    User? author,
+    String? title,
+    String? description,
+    List<String>? mediaUrls,
+    bool? isEvent,
+    DateTime? eventDateTime,
+    String? location,
+    List<String>? interestedUsers,
+    List<String>? attendedUsers,
+    int? interestedCount,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Post(
+      id: id ?? this.id,
+      authorId: authorId ?? this.authorId,
+      author: author ?? this.author,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      mediaUrls: mediaUrls ?? this.mediaUrls,
+      isEvent: isEvent ?? this.isEvent,
+      eventDateTime: eventDateTime ?? this.eventDateTime,
+      location: location ?? this.location,
+      interestedUsers: interestedUsers ?? this.interestedUsers,
+      attendedUsers: attendedUsers ?? this.attendedUsers,
+      interestedCount: interestedCount ?? this.interestedCount,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -102,7 +135,7 @@ class Post {
       'eventDateTime': eventDateTime?.toIso8601String(),
       'location': location,
       'interestedUsers': interestedUsers,
-      'attendedUsers': attendedUsers, 
+      'attendedUsers': attendedUsers,
       'interestedCount': interestedCount,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
