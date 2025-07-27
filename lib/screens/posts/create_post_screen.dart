@@ -148,7 +148,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create New Post')),
       body: Consumer<PostProvider>(
         builder: (context, postProvider, child) {
           return SingleChildScrollView(

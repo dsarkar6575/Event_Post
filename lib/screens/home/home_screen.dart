@@ -34,6 +34,24 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  String _getAppBarTitle() {
+  switch (_selectedIndex) {
+    case 0:
+      return 'Home';
+    case 1:
+      return 'Chats';
+    case 2:
+      return 'Create Post';
+    case 3:
+      return 'My Events';
+    case 4:
+      return 'My Profile';
+    default:
+      return 'Event App';
+  }
+}
+
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -56,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event App'),
+        title: Text(_getAppBarTitle()),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.menu),

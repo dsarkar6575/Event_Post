@@ -27,25 +27,38 @@ class _EventFeedScreenState extends State<EventFeedScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Event"),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: "Created"),
-            Tab(text: "Interested"),
-            Tab(text: "Attended"),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          CreatedEventsTab(),
-          InterestedEventsTab(),
-          AttendedEventsTab(),
+          // TabBar placed directly in the body
+          Material(
+            color: Theme.of(context).colorScheme.surface,
+            elevation: 2,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Theme.of(context).colorScheme.primary,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: Theme.of(context).colorScheme.primary,
+              tabs: const [
+                Tab(text: "Created"),
+                Tab(text: "Interested"),
+                Tab(text: "Attended"),
+              ],
+            ),
+          ),
+
+          // Tab content
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                CreatedEventsTab(),
+                InterestedEventsTab(),
+                AttendedEventsTab(),
+              ],
+            ),
+          ),
         ],
-      ),
+      )
     );
   }
 }
