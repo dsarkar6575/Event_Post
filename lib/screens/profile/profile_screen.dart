@@ -61,104 +61,137 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           final User user = userProvider.viewedUser!;
           final bool isFollowing = user.followers.contains(currentUserId);
 
-          return DefaultTabController(
-            length: 2,
-            child: NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                SliverAppBar(
-                  floating: true,
-                  pinned: true,
-                  expandedHeight: 370,
-                  actions: [
-                    if (isMyProfile)
+          if (isMyProfile) {
+            // My Profile - show tabs
+            return DefaultTabController(
+              length: 2,
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                  SliverAppBar(
+                    floating: true,
+                    pinned: true,
+                    expandedHeight: 370,
+                    actions: [
                       IconButton(
                         icon: const Icon(Icons.edit),
                         onPressed: () {
                           Navigator.of(context).pushNamed(AppRouter.editProfileRoute);
                         },
                       ),
-                  ],
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Padding(
-                      padding: const EdgeInsets.only(top: kToolbarHeight + 16, left: 16, right: 16, bottom: 16),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 60,
-                            backgroundImage: user.profileImageUrl != null
-                                ? NetworkImage(user.profileImageUrl!)
-                                : null,
-                            child: user.profileImageUrl == null
-                                ? Text(user.username[0].toUpperCase(), style: const TextStyle(fontSize: 40))
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            user.username,
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            user.bio ?? 'No bio yet.',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Column(
-                                children: [
-                                  Text('${user.followers.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  const Text('Followers'),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text('${user.following.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  const Text('Following'),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          if (!isMyProfile)
-                            ElevatedButton(
-                              onPressed: currentUserId == null
-                                  ? null
-                                  : () async {
-                                      if (isFollowing) {
-                                        await userProvider.unfollowUser(user.id, currentUserId);
-                                      } else {
-                                        await userProvider.followUser(user.id, currentUserId);
-                                      }
-                                      await userProvider.fetchUserProfile(user.id);
-                                    },
-                              child: Text(isFollowing ? 'Unfollow' : 'Follow'),
-                            ),
-                        ],
-                      ),
+                    ],
+                    flexibleSpace: FlexibleSpaceBar(
+                      background: _buildProfileHeader(user, isMyProfile, isFollowing, currentUserId, userProvider),
+                    ),
+                    bottom: TabBar(
+                      controller: _tabController,
+                      tabs: const [
+                        Tab(text: 'Posts'),
+                        Tab(text: 'Interested Posts'),
+                      ],
                     ),
                   ),
-                  bottom: TabBar(
-                    controller: _tabController,
-                    tabs: const [
-                      Tab(text: 'Posts'),
-                      Tab(text: 'Interested Posts'),
-                    ],
+                ],
+                body: TabBarView(
+                  controller: _tabController,
+                  children: const [
+                    CreatedEventsTab(),
+                    InterestedEventsTab(),
+                  ],
+                ),
+              ),
+            );
+          } else {
+            // Other user's profile - no tabs
+            return Scaffold(
+              body: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                  SliverAppBar(
+                    floating: true,
+                    pinned: true,
+                    expandedHeight: 370,
+                    flexibleSpace: FlexibleSpaceBar(
+                      background: _buildProfileHeader(user, isMyProfile, isFollowing, currentUserId, userProvider),
+                    ),
                   ),
-                )
-              ],
-              body: TabBarView(
-                controller: _tabController,
-                children: const [
-                  CreatedEventsTab(),
-                  InterestedEventsTab(),
+                ],
+                body: const Center(
+                  child: Text('No posts to show.'),
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(
+    User user,
+    bool isMyProfile,
+    bool isFollowing,
+    String? currentUserId,
+    UserProvider userProvider,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: kToolbarHeight + 16, left: 16, right: 16, bottom: 16),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundImage: user.profileImageUrl != null
+                ? NetworkImage(user.profileImageUrl!)
+                : null,
+            child: user.profileImageUrl == null
+                ? Text(user.username[0].toUpperCase(), style: const TextStyle(fontSize: 40))
+                : null,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            user.username,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            user.bio ?? 'No bio yet.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text('${user.followers.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Followers'),
                 ],
               ),
+              Column(
+                children: [
+                  Text('${user.following.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Following'),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (!isMyProfile)
+            Flexible(
+              child: ElevatedButton(
+                onPressed: currentUserId == null
+                    ? null
+                    : () async {
+                        if (isFollowing) {
+                          await userProvider.unfollowUser(user.id, currentUserId);
+                        } else {
+                          await userProvider.followUser(user.id, currentUserId);
+                        }
+                        await userProvider.fetchUserProfile(user.id);
+                      },
+                child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+              ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
