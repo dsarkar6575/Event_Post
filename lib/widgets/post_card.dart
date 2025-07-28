@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/models/post_model.dart';
 import 'package:myapp/utils/app_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class PostCard extends StatefulWidget {
@@ -12,7 +13,7 @@ class PostCard extends StatefulWidget {
   final VoidCallback? onComment;
   final VoidCallback? onShare;
   final Future<void> Function(String postId)? onMarkAttended;
-  final bool isLoading; 
+  final bool isLoading;
 
   const PostCard({
     super.key,
@@ -23,7 +24,7 @@ class PostCard extends StatefulWidget {
     this.onComment,
     this.onShare,
     this.onMarkAttended,
-    this.isLoading = false, 
+    this.isLoading = false,
   });
 
   @override
@@ -31,17 +32,20 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> {
-  
   @override
   Widget build(BuildContext context) {
-
     final bool isActionLoading = widget.isLoading;
-    final Post post = widget.post; 
+    final Post post = widget.post;
 
-    final bool isInterested = post.interestedUsers.contains(widget.currentUserId);
+    final bool isInterested = post.interestedUsers.contains(
+      widget.currentUserId,
+    );
     final bool isAuthor = widget.currentUserId == post.authorId;
     final bool isAttended = post.attendedUsers.contains(widget.currentUserId);
-    final bool isExpired = post.isEvent && post.eventDateTime != null && post.eventDateTime!.isBefore(DateTime.now());
+    final bool isExpired =
+        post.isEvent &&
+        post.eventDateTime != null &&
+        post.eventDateTime!.isBefore(DateTime.now());
 
     return Card(
       margin: const EdgeInsets.all(8.0),
@@ -66,12 +70,14 @@ class _PostCardState extends State<PostCard> {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage: post.author?.profileImageUrl != null
-                        ? NetworkImage(post.author!.profileImageUrl!)
-                        : null,
-                    child: post.author?.profileImageUrl == null
-                        ? Text(post.author?.username[0].toUpperCase() ?? '')
-                        : null,
+                    backgroundImage:
+                        post.author?.profileImageUrl != null
+                            ? NetworkImage(post.author!.profileImageUrl!)
+                            : null,
+                    child:
+                        post.author?.profileImageUrl == null
+                            ? Text(post.author?.username[0].toUpperCase() ?? '')
+                            : null,
                   ),
                   const SizedBox(width: 8.0),
                   Expanded(
@@ -97,24 +103,28 @@ class _PostCardState extends State<PostCard> {
                       onSelected: (value) {
                         if (value == 'edit') {
                           Navigator.of(context).pushNamed(
-                            AppRouter.editPostRoute.replaceFirst(':id', post.id),
+                            AppRouter.editPostRoute.replaceFirst(
+                              ':id',
+                              post.id,
+                            ),
                             arguments: post,
                           );
                         } else if (value == 'delete') {
-                          widget.onDelete?.call(); // Call the onDelete callback from the parent
+                          widget.onDelete
+                              ?.call(); // Call the onDelete callback from the parent
                         }
                       },
-                      itemBuilder: (BuildContext context) =>
-                          <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: 'edit',
-                          child: Text('Edit Post'),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: 'delete',
-                          child: Text('Delete Post'),
-                        ),
-                      ],
+                      itemBuilder:
+                          (BuildContext context) => <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'edit',
+                              child: Text('Edit Post'),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Text('Delete Post'),
+                            ),
+                          ],
                     ),
                 ],
               ),
@@ -154,8 +164,9 @@ class _PostCardState extends State<PostCard> {
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.image_not_supported),
+                        errorBuilder:
+                            (context, error, stackTrace) =>
+                                const Icon(Icons.image_not_supported),
                       ),
                     ),
                   if (post.isEvent) ...[
@@ -204,61 +215,80 @@ class _PostCardState extends State<PostCard> {
                 if (post.isEvent && isExpired && isInterested && !isAttended)
                   // "Attended" button for expired events where user was interested but hasn't marked attended
                   ElevatedButton(
-                    onPressed: isActionLoading ? null : () async { // Disable if loading
-                      if (widget.onMarkAttended != null) {
-                        await widget.onMarkAttended!(post.id);
-                      }
-                    },
-                    child: isActionLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text("Attended"),
+                    onPressed:
+                        isActionLoading
+                            ? null
+                            : () async {
+                              // Disable if loading
+                              if (widget.onMarkAttended != null) {
+                                await widget.onMarkAttended!(post.id);
+                              }
+                            },
+                    child:
+                        isActionLoading
+                            ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text("Attended"),
                   )
                 else if (post.isEvent && isExpired && isAttended)
                   // Display "You attended" if event expired and user attended
-                  const Text("You attended",
-                      style: TextStyle(color: Colors.green))
+                  const Text(
+                    "You attended",
+                    style: TextStyle(color: Colors.green),
+                  )
                 else if (post.isEvent && !isExpired)
                   // "Interest" button for events that are not yet expired
                   TextButton.icon(
-                    onPressed: isActionLoading ? null : widget.onToggleInterest, // Disable if loading
-                    icon: isActionLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Icon(isInterested ? Icons.star : Icons.star_border,
-                            color: isInterested ? Colors.blue : Colors.grey),
-                    label: Text('${post.interestedUsers.length} Interest'), // Display interest count directly from post
+                    onPressed:
+                        isActionLoading
+                            ? null
+                            : widget.onToggleInterest, // Disable if loading
+                    icon:
+                        isActionLoading
+                            ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : Icon(
+                              isInterested ? Icons.star : Icons.star_border,
+                              color: isInterested ? Colors.blue : Colors.grey,
+                            ),
+                    label: Text(
+                      '${post.interestedUsers.length} Interest',
+                    ), // Display interest count directly from post
                   )
                 else if (!post.isEvent)
                   // Placeholder for non-event posts
                   const SizedBox.shrink(), // Or a "Likes" button etc.
-
                 // Comment Button
                 TextButton.icon(
-                  onPressed: widget.onComment ??
+                  onPressed:
+                      widget.onComment ??
                       () {
                         Navigator.of(context).pushNamed(
-                            AppRouter.commentsRoute.replaceFirst(':postId', post.id));
+                          AppRouter.commentsRoute.replaceFirst(
+                            ':postId',
+                            post.id,
+                          ),
+                        );
                       },
                   icon: const Icon(Icons.comment, color: Colors.blueGrey),
-                  label: Text(' Comments'), // Use actual comment count if available
+                  label: Text(
+                    ' Comments',
+                  ), // Use actual comment count if available
                 ),
 
                 // Share Button
                 TextButton.icon(
-                  onPressed: widget.onShare ??
+                  onPressed:
+                      widget.onShare ??
                       () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Post link copied to clipboard!'),
-                          ),
-                        );
+                        final String shareText = '${post.title}\n\n${post.description}';
+                        Share.share(shareText);
                       },
                   icon: const Icon(Icons.share, color: Colors.blueGrey),
                   label: const Text('Share'),
