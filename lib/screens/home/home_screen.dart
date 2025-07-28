@@ -19,38 +19,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
-  static final List<Widget> _widgetOptions = <Widget>[
-    const PostFeedScreen(),
-    const ChatListScreen(),
-    const CreatePostScreen(),
-    const EventFeedScreen(),
-    // Placeholder for own profile, will navigate
-    Builder(
-      builder: (context) {
-        final authProvider = Provider.of<AuthProvider>(context);
-        return ProfileScreen(userId: authProvider.currentUser!.id);
-      },
-    ),
-  ];
+  bool _redirected = false; // ✅ Add this flag
 
   String _getAppBarTitle() {
-  switch (_selectedIndex) {
-    case 0:
-      return 'Home';
-    case 1:
-      return 'Chats';
-    case 2:
-      return 'Create Post';
-    case 3:
-      return 'My Events';
-    case 4:
-      return 'My Profile';
-    default:
-      return 'Event App';
+    switch (_selectedIndex) {
+      case 0:
+        return 'Home';
+      case 1:
+        return 'Chats';
+      case 2:
+        return 'Create Post';
+      case 3:
+        return 'My Events';
+      case 4:
+        return 'My Profile';
+      default:
+        return 'Event App';
+    }
   }
-}
-
 
   void _onItemTapped(int index) {
     setState(() {
@@ -63,14 +49,36 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final eventProvider = Provider.of<EventProvider>(context);
 
-    // If for some reason user is null, navigate back to login
-    if (!authProvider.isAuthenticated) {
-      // Use WidgetsBinding.instance.addPostFrameCallback to ensure context is valid
+    // ✅ Wait until loading is complete
+    if (authProvider.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ✅ Redirect only once if NOT authenticated
+    if (!authProvider.isAuthenticated && !_redirected) {
+      _redirected = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
+    // ✅ Prevent crash if currentUser is null
+    final userId = authProvider.currentUser?.id;
+    if (userId == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // ✅ Use userId safely
+    final List<Widget> widgetOptions = <Widget>[
+      const PostFeedScreen(),
+      const ChatListScreen(),
+      const CreatePostScreen(),
+      const EventFeedScreen(),
+      ProfileScreen(userId: userId),
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -80,43 +88,32 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.menu),
             onSelected: (value) async {
               if (value == 'logout') {
-                await Provider.of<AuthProvider>(
-                  context,
-                  listen: false,
-                ).logout();
-                Navigator.of(
-                  context,
-                ).pushReplacementNamed(AppRouter.loginRoute);
+                await authProvider.logout();
+                Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
               } else if (value == 'toggle_theme') {
-                final themeProvider = Provider.of<ThemeProvider>(
-                  context,
-                  listen: false,
-                );
+                final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
                 final isDark = themeProvider.themeMode == ThemeMode.dark;
                 themeProvider.toggleTheme(!isDark);
               }
             },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(value: 'logout', child: Text('Logout')),
-                  const PopupMenuItem(
-                    value: 'toggle_theme',
-                    child: Text('Toggle Dark Mode'),
-                  ),
-                ],
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'logout', child: Text('Logout')),
+              PopupMenuItem(value: 'toggle_theme', child: Text('Toggle Dark Mode')),
+            ],
           ),
         ],
       ),
-
-      body: _widgetOptions.elementAt(_selectedIndex),
+      body: widgetOptions[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.blueAccent,
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        items: [
           const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           const BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.add_box),
-            label: 'Post',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.add_box), label: 'Post'),
           BottomNavigationBarItem(
             icon: Stack(
               children: [
@@ -130,16 +127,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      constraints: const BoxConstraints(
-                        minWidth: 12,
-                        minHeight: 12,
-                      ),
+                      constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
                       child: Text(
                         '${eventProvider.unreadCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 8),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -148,16 +139,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             label: 'Events',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // To show all labels
       ),
     );
   }

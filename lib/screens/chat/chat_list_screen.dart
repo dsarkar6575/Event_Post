@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:myapp/models/chat_model.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/providers/chat_provider.dart';
 import 'package:myapp/utils/app_router.dart';

@@ -8,6 +8,7 @@ import 'package:myapp/providers/post_provider.dart';
 import 'package:myapp/providers/user_provider.dart';
 import 'package:myapp/screens/auth/login_screen.dart';
 import 'package:myapp/screens/home/home_screen.dart';
+import 'package:myapp/screens/splash_screen.dart';
 import 'package:myapp/utils/app_router.dart';
 
 void main() {
@@ -15,7 +16,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()), // ✅ AuthProvider auto-checks login
         ChangeNotifierProvider(create: (_) => PostProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
@@ -41,10 +42,14 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
           onGenerateRoute: AppRouter.generateRoute,
           home: Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              return authProvider.isAuthenticated
-                  ? const HomeScreen()
-                  : const LoginScreen();
+            builder: (context, authProvider, _) {
+              if (authProvider.isLoading) {
+                return const SplashScreen(); // ✅ Show loader while checking
+              } else if (authProvider.isAuthenticated) {
+                return const HomeScreen(); // ✅ Automatically reads user from provider
+              } else {
+                return const LoginScreen(); // ✅ Go to login if not logged in
+              }
             },
           ),
         );

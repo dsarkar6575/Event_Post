@@ -5,14 +5,14 @@ import 'package:myapp/screens/auth/register_screen.dart';
 import 'package:myapp/screens/chat/chat_list_screen.dart';
 import 'package:myapp/screens/chat/chat_screen.dart';
 import 'package:myapp/screens/home/home_screen.dart';
-import 'package:myapp/screens/event/event_screen.dart'; // Assuming EventFeedScreen is in this file
+import 'package:myapp/screens/event/event_screen.dart'; 
 import 'package:myapp/screens/posts/create_post_screen.dart';
 import 'package:myapp/screens/posts/post_detail_screen.dart';
 import 'package:myapp/screens/posts/post_feed_screen.dart';
 import 'package:myapp/screens/posts/comments_screen.dart';
 import 'package:myapp/screens/profile/edit_profile_screen.dart';
 import 'package:myapp/screens/profile/profile_screen.dart';
-import 'package:myapp/screens/posts/edit_post_screen.dart'; // Import the new screen
+import 'package:myapp/screens/posts/edit_post_screen.dart'; 
 
 class AppRouter {
   static const String loginRoute = '/';
@@ -21,7 +21,7 @@ class AppRouter {
   static const String postFeedRoute = '/posts';
   static const String createPostRoute = '/create_post';
   static const String postDetailRoute = '/posts/:id';
-  static const String editPostRoute = '/posts/:id/edit'; // New route for editing
+  static const String editPostRoute = '/posts/:id/edit'; 
   static const String chatListRoute = '/chats';
   static const String chatRoute = '/chat/:chatId';
   static const String profileRoute = '/profile/:userId';
@@ -53,14 +53,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
     }
 
-    // Handle dynamic routes
     if (path.startsWith('/posts/') && path.endsWith('/edit') && path.split('/').length == 4) {
       final postId = path.split('/')[2];
-      // You need to pass the actual Post object here,
-      // which means the navigation will likely happen from a PostCard
-      // or PostDetailScreen where the Post object is available.
-      // For now, we'll assume settings.arguments will provide the Post object.
-      // Alternatively, you would fetch the post here.
       final Post? post = settings.arguments as Post?;
       if (post != null) {
         return MaterialPageRoute(builder: (_) => EditPostScreen(post: post));
