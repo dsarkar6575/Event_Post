@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/widgets/created_event_tab.dart';
 import 'package:myapp/widgets/interested_event_tab.dart';
+import 'package:myapp/widgets/post_card.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/providers/user_provider.dart';
 import 'package:myapp/utils/app_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userId;
@@ -15,7 +17,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -46,6 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final isMyProfile = currentUserId == widget.userId;
 
     return Scaffold(
+      appBar: isMyProfile ? null : AppBar(title: const Text('Profile')),
       body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
           if (userProvider.isLoading && userProvider.viewedUser == null) {
@@ -61,63 +65,73 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           final User user = userProvider.viewedUser!;
           final bool isFollowing = user.followers.contains(currentUserId);
 
-          if (isMyProfile) {
-            // My Profile - show tabs
-            return DefaultTabController(
-              length: 2,
-              child: NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  SliverAppBar(
-                    floating: true,
-                    pinned: true,
-                    expandedHeight: 370,
-                    actions: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () {
-                          Navigator.of(context).pushNamed(AppRouter.editProfileRoute);
-                        },
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildProfileHeader(
+                  user,
+                  isMyProfile,
+                  isFollowing,
+                  currentUserId,
+                  userProvider,
+                ),
+                if (isMyProfile)
+                  Column(
+                    children: [
+                      TabBar(
+                        controller: _tabController,
+                        tabs: const [
+                          Tab(text: 'Posts'),
+                          Tab(text: 'Interested'),
+                        ],
+                      ),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: const [
+                            CreatedEventsTab(),
+                            InterestedEventsTab(),
+                          ],
+                        ),
                       ),
                     ],
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: _buildProfileHeader(user, isMyProfile, isFollowing, currentUserId, userProvider),
-                    ),
-                    bottom: TabBar(
-                      controller: _tabController,
-                      tabs: const [
-                        Tab(text: 'Posts'),
-                        Tab(text: 'Interested Posts'),
-                      ],
-                    ),
-                  ),
-                ],
-                body: TabBarView(
-                  controller: _tabController,
-                  children: const [
-                    CreatedEventsTab(),
-                    InterestedEventsTab(),
-                  ],
-                ),
-              ),
-            );
-          } else {
-            // Other user's profile - no tabs
-            return Scaffold(
-              body: NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  SliverAppBar(
-                    floating: true,
-                    pinned: true,
-                    expandedHeight: 370,
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: _buildProfileHeader(user, isMyProfile, isFollowing, currentUserId, userProvider),
-                    ),
-                  ),
-                ],
-                body: const SizedBox.shrink(), // Empty body
-              ),
-            );
-          }
+                  )
+                else
+                  userProvider.userPosts.isEmpty
+                      ? const Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Text("No posts yet."),
+                      )
+                      : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: userProvider.userPosts.length,
+                        itemBuilder: (context, index) {
+                          final post = userProvider.userPosts[index];
+                          return PostCard(
+                            post: post,
+                            currentUserId: currentUserId,
+                            onComment: () {
+                              Navigator.of(context).pushNamed(
+                                AppRouter.commentsRoute.replaceFirst(
+                                  ':postId',
+                                  post.id,
+                                ),
+                              );
+                            },
+                            onShare: () {
+                              final shareText =
+                                  '${post.title}\n\n${post.description}';
+                              Share.share(shareText);
+                            },
+                          );
+                        },
+                      ),
+              ],
+            ),
+          );
         },
       ),
     );
@@ -131,62 +145,97 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     UserProvider userProvider,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(top: kToolbarHeight + 16, left: 16, right: 16, bottom: 16),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Stack(
         children: [
-          CircleAvatar(
-            radius: 60,
-            backgroundImage: user.profileImageUrl != null
-                ? NetworkImage(user.profileImageUrl!)
-                : null,
-            child: user.profileImageUrl == null
-                ? Text(user.username[0].toUpperCase(), style: const TextStyle(fontSize: 40))
-                : null,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            user.username,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            user.bio ?? 'No bio yet.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Column(
             children: [
-              Column(
+              const SizedBox(height: 40), // Space for edit button
+              CircleAvatar(
+                radius: 60,
+                backgroundImage:
+                    user.profileImageUrl != null
+                        ? NetworkImage(user.profileImageUrl!)
+                        : null,
+                child:
+                    user.profileImageUrl == null
+                        ? Text(
+                          user.username[0].toUpperCase(),
+                          style: const TextStyle(fontSize: 40),
+                        )
+                        : null,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                user.username,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                user.bio ?? 'No bio yet.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Text('${user.followers.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const Text('Followers'),
+                  Column(
+                    children: [
+                      Text(
+                        '${user.followers.length}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const Text('Followers'),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        '${user.following.length}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const Text('Following'),
+                    ],
+                  ),
                 ],
               ),
-              Column(
-                children: [
-                  Text('${user.following.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const Text('Following'),
-                ],
-              ),
+              const SizedBox(height: 16),
+              if (!isMyProfile)
+                ElevatedButton(
+                  onPressed:
+                      currentUserId == null
+                          ? null
+                          : () async {
+                            if (isFollowing) {
+                              await userProvider.unfollowUser(
+                                user.id,
+                                currentUserId,
+                              );
+                            } else {
+                              await userProvider.followUser(
+                                user.id,
+                                currentUserId,
+                              );
+                            }
+                            await userProvider.fetchUserProfile(user.id);
+                          },
+                  child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+                ),
             ],
           ),
-          const SizedBox(height: 16),
-          if (!isMyProfile)
-            Flexible(
-              child: ElevatedButton(
-                onPressed: currentUserId == null
-                    ? null
-                    : () async {
-                        if (isFollowing) {
-                          await userProvider.unfollowUser(user.id, currentUserId);
-                        } else {
-                          await userProvider.followUser(user.id, currentUserId);
-                        }
-                        await userProvider.fetchUserProfile(user.id);
-                      },
-                child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+          if (isMyProfile)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {
+                  Navigator.of(context).pushNamed(AppRouter.editProfileRoute);
+                },
               ),
             ),
         ],

@@ -35,7 +35,7 @@ class AuthProvider extends ChangeNotifier {
       print(_error);
       _token = null;
       _currentUser = null;
-      SecureStorage.clearAll(); // Clear corrupted data
+      await SecureStorage.clearAll(); // Clear corrupted data
     } finally {
       _isLoading = false;
       notifyListeners();

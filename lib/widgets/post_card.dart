@@ -212,7 +212,7 @@ class _PostCardState extends State<PostCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Attend/Interested Button Logic
-                if (post.isEvent && isExpired && isInterested && !isAttended)
+                if (post.isEvent && isExpired && !isAttended)
                   // "Attended" button for expired events where user was interested but hasn't marked attended
                   ElevatedButton(
                     onPressed:
