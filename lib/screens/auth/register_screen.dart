@@ -107,6 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         : CustomButton(
                             text: 'Register',
                             onPressed: _register,
+                            color: const Color.fromARGB(255, 118, 111, 126)
                           );
                   },
                 ),

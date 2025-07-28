@@ -137,6 +137,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       : CustomButton(
                           text: 'Save Changes',
                           onPressed: _updateProfile,
+                          color: const Color.fromARGB(255, 118, 111, 126)
                         ),
                 ],
               ),

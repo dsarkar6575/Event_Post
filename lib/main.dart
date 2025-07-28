@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:myapp/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/auth_provider.dart';
-import 'package:myapp/providers/chat_provider.dart';
 import 'package:myapp/providers/event_provider.dart';
 import 'package:myapp/providers/post_provider.dart';
 import 'package:myapp/providers/user_provider.dart';
@@ -17,7 +16,6 @@ void main() {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
       ],

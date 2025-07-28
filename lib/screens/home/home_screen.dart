@@ -3,7 +3,6 @@ import 'package:myapp/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/providers/event_provider.dart';
-import 'package:myapp/screens/chat/chat_list_screen.dart';
 import 'package:myapp/screens/event/event_screen.dart';
 import 'package:myapp/screens/posts/create_post_screen.dart';
 import 'package:myapp/screens/posts/post_feed_screen.dart';
@@ -22,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static final List<Widget> _widgetOptions = <Widget>[
     const PostFeedScreen(),
-    const ChatListScreen(),
     const CreatePostScreen(),
     const EventFeedScreen(),
     // Placeholder for own profile, will navigate
@@ -39,12 +37,10 @@ class _HomeScreenState extends State<HomeScreen> {
     case 0:
       return 'Home';
     case 1:
-      return 'Chats';
-    case 2:
       return 'Create Post';
-    case 3:
+    case 2:
       return 'My Events';
-    case 4:
+    case 3:
       return 'My Profile';
     default:
       return 'Event App';
@@ -112,7 +108,6 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          const BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
           const BottomNavigationBarItem(
             icon: Icon(Icons.add_box),
             label: 'Post',

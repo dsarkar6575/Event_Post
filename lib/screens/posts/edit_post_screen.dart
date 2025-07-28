@@ -321,11 +321,12 @@ class _EditPostScreenState extends State<EditPostScreen> {
                     child: ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 118, 111, 126),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: const Text(
                         'Update Post',
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ),

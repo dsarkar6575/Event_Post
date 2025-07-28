@@ -114,9 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                   ),
                 ],
-                body: const Center(
-                  child: Text('No posts to show.'),
-                ),
+                body: const SizedBox.shrink(), // Empty body
               ),
             );
           }

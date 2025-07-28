@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:myapp/models/post_model.dart';
 import 'package:myapp/screens/auth/login_screen.dart';
 import 'package:myapp/screens/auth/register_screen.dart';
-import 'package:myapp/screens/chat/chat_list_screen.dart';
-import 'package:myapp/screens/chat/chat_screen.dart';
 import 'package:myapp/screens/home/home_screen.dart';
 import 'package:myapp/screens/event/event_screen.dart'; // Assuming EventFeedScreen is in this file
 import 'package:myapp/screens/posts/create_post_screen.dart';
@@ -47,8 +45,6 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const CreatePostScreen());
       case eventRoute:
         return MaterialPageRoute(builder: (_) => const EventFeedScreen());
-      case chatListRoute:
-        return MaterialPageRoute(builder: (_) => const ChatListScreen());
       case editProfileRoute:
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
     }
@@ -76,9 +72,6 @@ class AppRouter {
     } else if (path.startsWith('/post/') && path.endsWith('/comments')) {
       final postId = path.split('/')[2];
       return MaterialPageRoute(builder: (_) => CommentsScreen(postId: postId));
-    } else if (path.startsWith('/chat/')) {
-      final chatId = path.split('/')[2];
-      return MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId));
     } else if (path.startsWith('/profile/')) {
       final userId = path.split('/')[2];
       return MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId));

@@ -259,6 +259,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       : CustomButton(
                         text: 'Create Post',
                         onPressed: _createPost,
+                        color: const Color.fromARGB(255, 118, 111, 126)
                       ),
                 ],
               ),

@@ -104,6 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         : CustomButton(
                             text: 'Login',
                             onPressed: _login,
+                            color: const Color.fromARGB(255, 118, 111, 126)
                           );
                   },
                 ),
