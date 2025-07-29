@@ -33,20 +33,19 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   String _getAppBarTitle() {
-  switch (_selectedIndex) {
-    case 0:
-      return 'Home';
-    case 1:
-      return 'Create Post';
-    case 2:
-      return 'My Events';
-    case 3:
-      return 'My Profile';
-    default:
-      return 'Event App';
+    switch (_selectedIndex) {
+      case 0:
+        return 'Home';
+      case 1:
+        return 'Create Post';
+      case 2:
+        return 'My Events';
+      case 3:
+        return 'My Profile';
+      default:
+        return 'Event App';
+    }
   }
-}
-
 
   void _onItemTapped(int index) {
     setState(() {
@@ -88,18 +87,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   listen: false,
                 );
-                final isDark = themeProvider.themeMode == ThemeMode.dark;
+
+                // Get current effective brightness
+                final currentBrightness = Theme.of(context).brightness;
+                final isDark = currentBrightness == Brightness.dark;
+
+                // Toggle to opposite of current brightness
                 themeProvider.toggleTheme(!isDark);
               }
             },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(value: 'logout', child: Text('Logout')),
-                  const PopupMenuItem(
-                    value: 'toggle_theme',
-                    child: Text('Toggle Dark Mode'),
-                  ),
-                ],
+            itemBuilder: (context) {
+              final currentBrightness = Theme.of(context).brightness;
+              final isDark = currentBrightness == Brightness.dark;
+
+              return [
+                const PopupMenuItem(value: 'logout', child: Text('Logout')),
+                PopupMenuItem(
+                  value: 'toggle_theme',
+                  child: Text(isDark ? '🌞 Light Mode' : '🌙 Dark Mode'),
+                ),
+              ];
+            },
           ),
         ],
       ),
