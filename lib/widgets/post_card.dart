@@ -245,7 +245,7 @@ class _PostCardState extends State<PostCard> {
                     onPressed:
                         isActionLoading
                             ? null
-                            : widget.onToggleInterest, // Disable if loading
+                            : widget.onToggleInterest,
                     icon:
                         isActionLoading
                             ? const SizedBox(
@@ -259,7 +259,7 @@ class _PostCardState extends State<PostCard> {
                             ),
                     label: Text(
                       '${post.interestedUsers.length} Interest',
-                    ), // Display interest count directly from post
+                    ),
                   )
                 else if (!post.isEvent)
                   // Placeholder for non-event posts
@@ -288,6 +288,7 @@ class _PostCardState extends State<PostCard> {
                       widget.onShare ??
                       () {
                         final String shareText = '${post.title}\n\n${post.description}';
+                        // ignore: deprecated_member_use
                         Share.share(shareText);
                       },
                   icon: const Icon(Icons.share, color: Colors.blueGrey),

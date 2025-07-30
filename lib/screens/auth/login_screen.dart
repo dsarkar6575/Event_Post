@@ -102,10 +102,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     return authProvider.isLoading
                         ? const CircularProgressIndicator()
                         : CustomButton(
-                            text: 'Login',
-                            onPressed: _login,
-                            color: const Color.fromARGB(255, 118, 111, 126)
-                          );
+                          text: 'Login',
+                          onPressed: _login,
+                          color: const Color.fromARGB(255, 118, 111, 126),
+                        );
                   },
                 ),
                 const SizedBox(height: 16.0),

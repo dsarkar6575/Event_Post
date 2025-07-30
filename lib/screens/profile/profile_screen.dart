@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/providers/post_provider.dart';
 import 'package:myapp/widgets/created_event_tab.dart';
 import 'package:myapp/widgets/interested_event_tab.dart';
 import 'package:myapp/widgets/post_card.dart';
@@ -45,6 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    Provider.of<PostProvider>(context);
     final currentUserId = authProvider.currentUser?.id;
     final isMyProfile = currentUserId == widget.userId;
 
@@ -113,6 +115,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                           return PostCard(
                             post: post,
                             currentUserId: currentUserId,
+                            onToggleInterest: () {
+                              Provider.of<PostProvider>(
+                                context,
+                                listen: false,
+                              ).togglePostInterest(post.id, currentUserId!);
+                            },
+                            onMarkAttended: (postId) {
+                              return Provider.of<PostProvider>(
+                                context,
+                                listen: false,
+                              ).togglePostAttendance(postId, currentUserId!);
+                            },
                             onComment: () {
                               Navigator.of(context).pushNamed(
                                 AppRouter.commentsRoute.replaceFirst(
@@ -124,6 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             onShare: () {
                               final shareText =
                                   '${post.title}\n\n${post.description}';
+                              // ignore: deprecated_member_use
                               Share.share(shareText);
                             },
                           );
