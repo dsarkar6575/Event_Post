@@ -115,17 +115,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                           return PostCard(
                             post: post,
                             currentUserId: currentUserId,
-                            onToggleInterest: () {
-                              Provider.of<PostProvider>(
+                            onToggleInterest: () async {
+                              await Provider.of<PostProvider>(
                                 context,
                                 listen: false,
                               ).togglePostInterest(post.id, currentUserId!);
+                              await userProvider.fetchUserPosts(
+                                widget.userId,
+                              ); // <== force UI refresh
                             },
-                            onMarkAttended: (postId) {
-                              return Provider.of<PostProvider>(
+                            onMarkAttended: (postId) async {
+                              await Provider.of<PostProvider>(
                                 context,
                                 listen: false,
                               ).togglePostAttendance(postId, currentUserId!);
+                              await userProvider.fetchUserPosts(
+                                widget.userId,
+                              ); // <== force UI refresh
                             },
                             onComment: () {
                               Navigator.of(context).pushNamed(

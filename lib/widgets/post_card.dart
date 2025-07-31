@@ -212,40 +212,38 @@ class _PostCardState extends State<PostCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Attend/Interested Button Logic
-                if (post.isEvent && isExpired && !isAttended)
-                  // "Attended" button for expired events where user was interested but hasn't marked attended
-                  ElevatedButton(
+                if (post.isEvent && isExpired)
+                  TextButton.icon(
                     onPressed:
-                        isActionLoading
+                        isActionLoading || widget.onMarkAttended == null
                             ? null
                             : () async {
-                              // Disable if loading
-                              if (widget.onMarkAttended != null) {
-                                await widget.onMarkAttended!(post.id);
-                              }
+                              await widget.onMarkAttended!(post.id);
                             },
-                    child:
+                    icon:
                         isActionLoading
                             ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                            : const Text("Attended"),
-                  )
-                else if (post.isEvent && isExpired && isAttended)
-                  // Display "You attended" if event expired and user attended
-                  const Text(
-                    "You attended",
-                    style: TextStyle(color: Colors.green),
+                            : Icon(
+                              isAttended
+                                  ? Icons.check_circle
+                                  : Icons.check_circle_outline,
+                              color: isAttended ? Colors.green : Colors.grey,
+                            ),
+                    label: Text(
+                      '${post.attendedUsers.length} Attended',
+                      style: TextStyle(
+                        color: isAttended ? Colors.green : Colors.grey,
+                      ),
+                    ),
                   )
                 else if (post.isEvent && !isExpired)
                   // "Interest" button for events that are not yet expired
                   TextButton.icon(
-                    onPressed:
-                        isActionLoading
-                            ? null
-                            : widget.onToggleInterest,
+                    onPressed: isActionLoading ? null : widget.onToggleInterest,
                     icon:
                         isActionLoading
                             ? const SizedBox(
@@ -257,9 +255,7 @@ class _PostCardState extends State<PostCard> {
                               isInterested ? Icons.star : Icons.star_border,
                               color: isInterested ? Colors.blue : Colors.grey,
                             ),
-                    label: Text(
-                      '${post.interestedUsers.length} Interest',
-                    ),
+                    label: Text('${post.interestedUsers.length} Interest'),
                   )
                 else if (!post.isEvent)
                   // Placeholder for non-event posts
@@ -287,7 +283,8 @@ class _PostCardState extends State<PostCard> {
                   onPressed:
                       widget.onShare ??
                       () {
-                        final String shareText = '${post.title}\n\n${post.description}';
+                        final String shareText =
+                            '${post.title}\n\n${post.description}';
                         // ignore: deprecated_member_use
                         Share.share(shareText);
                       },

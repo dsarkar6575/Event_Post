@@ -31,7 +31,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       _error = null;
     });
     try {
-      _post = await Provider.of<PostProvider>(context, listen: false).postService.getPostById(widget.postId);
+      _post = await Provider.of<PostProvider>(
+        context,
+        listen: false,
+      ).postService.getPostById(widget.postId);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -78,7 +81,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               onPressed: () {
                 // TODO: Navigate to Edit Post Screen
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Post functionality not yet implemented.')),
+                  const SnackBar(
+                    content: Text(
+                      'Edit Post functionality not yet implemented.',
+                    ),
+                  ),
                 );
               },
             ),
@@ -86,7 +93,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () async {
-                await Provider.of<PostProvider>(context, listen: false).deletePost(_post!.id);
+                await Provider.of<PostProvider>(
+                  context,
+                  listen: false,
+                ).deletePost(_post!.id);
                 if (mounted) {
                   Navigator.pop(context); // Go back after deleting
                 }
@@ -107,7 +117,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             InkWell(
               onTap: () {
                 if (_post!.author?.id != null) {
-                  Navigator.of(context).pushNamed(AppRouter.profileRoute.replaceFirst(':userId', _post!.author!.id));
+                  Navigator.of(context).pushNamed(
+                    AppRouter.profileRoute.replaceFirst(
+                      ':userId',
+                      _post!.author!.id,
+                    ),
+                  );
                 }
               },
               child: Text(
@@ -122,13 +137,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported),
+                errorBuilder:
+                    (context, error, stackTrace) =>
+                        const Icon(Icons.image_not_supported),
               ),
             const SizedBox(height: 16.0),
-            Text(
-              _post!.description,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(_post!.description, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 16.0),
             if (_post!.isEvent) ...[
               const Divider(),
@@ -143,7 +157,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   const SizedBox(width: 8),
                   Text(
                     _post!.eventDateTime != null
-                        ? DateFormat('EEE, MMM d, yyyy HH:mm').format(_post!.eventDateTime!)
+                        ? DateFormat(
+                          'EEE, MMM d, yyyy HH:mm',
+                        ).format(_post!.eventDateTime!)
                         : 'Date not set',
                   ),
                 ],
@@ -160,25 +176,101 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ],
             Consumer<PostProvider>(
               builder: (context, postProvider, child) {
-                final isInterested = _post!.interestedUsers.contains(currentUserId);
-                return ElevatedButton.icon(
-                  onPressed: currentUserId == null
-                      ? null
-                      : () async {
-                          await postProvider.togglePostInterest(_post!.id, currentUserId);
-                          // Re-fetch post details to update UI accurately
-                          await _fetchPostDetails();
-                        },
-                  icon: Icon(isInterested ? Icons.star : Icons.star_border),
-                  label: Text(
-                    isInterested ? 'Interested (${_post!.interestedCount})' : 'Mark as Interested (${_post!.interestedCount})',
-                  ),
+                final isInterested = _post!.interestedUsers.contains(
+                  currentUserId,
+                );
+                final isAttended = _post!.attendedUsers.contains(currentUserId);
+
+                final isEvent = _post!.isEvent;
+                final eventDateTime = _post!.eventDateTime;
+                final isEventExpired =
+                    isEvent &&
+                    eventDateTime != null &&
+                    eventDateTime.isBefore(DateTime.now());
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Show Interest button only if event is NOT expired
+                    if (isEvent && !isEventExpired)
+                      ElevatedButton.icon(
+                        onPressed:
+                            currentUserId == null
+                                ? null
+                                : () async {
+                                  await postProvider.togglePostInterest(
+                                    _post!.id,
+                                    currentUserId,
+                                  );
+                                  setState(() {
+                                    if (isInterested) {
+                                      _post!.interestedUsers.remove(
+                                        currentUserId,
+                                      );
+                                    } else {
+                                      _post!.interestedUsers.add(
+                                        currentUserId!,
+                                      );
+                                    }
+                                  });
+                                },
+                        icon: Icon(
+                          isInterested ? Icons.star : Icons.star_border,
+                        ),
+                        label: Text(
+                          isInterested
+                              ? 'Interested (${_post!.interestedUsers.length})'
+                              : 'Mark as Interested (${_post!.interestedUsers.length})',
+                        ),
+                      ),
+
+                    // Show Attend button only if event IS expired
+                    if (isEvent && isEventExpired)
+                      ElevatedButton.icon(
+                        onPressed:
+                            currentUserId == null
+                                ? null
+                                : () async {
+                                  await postProvider.togglePostAttendance(
+                                    _post!.id,
+                                    currentUserId,
+                                  );
+                                  setState(() {
+                                    if (isAttended) {
+                                      _post!.attendedUsers.remove(
+                                        currentUserId,
+                                      );
+                                    } else {
+                                      _post!.attendedUsers.add(currentUserId!);
+                                    }
+                                  });
+                                },
+                        icon: Icon(
+                          isAttended
+                              ? Icons.check_circle
+                              : Icons.check_circle_outline,
+                        ),
+                        label: Text(
+                          isAttended
+                              ? 'Attended (${_post!.attendedUsers.length})'
+                              : 'Mark as Attended (${_post!.attendedUsers.length})',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isAttended ? Colors.green : null,
+                          foregroundColor: isAttended ? Colors.white : null,
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
             const SizedBox(height: 16.0),
-            Text('Posted: ${DateFormat('MMM d, yyyy').format(_post!.createdAt)}'),
-            Text('Last Updated: ${DateFormat('MMM d, yyyy').format(_post!.updatedAt)}'),
+            Text(
+              'Posted: ${DateFormat('MMM d, yyyy').format(_post!.createdAt)}',
+            ),
+            Text(
+              'Last Updated: ${DateFormat('MMM d, yyyy').format(_post!.updatedAt)}',
+            ),
           ],
         ),
       ),

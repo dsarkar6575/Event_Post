@@ -240,12 +240,7 @@ class PostProvider extends ChangeNotifier {
     notifyListeners(); // Notify listeners to show individual post loading indicator
 
     try {
-      // 1. Call the service to update attendance on the backend.
-      // This should return the most current state of the post from the server.
       final updatedPostFromServer = await postService.togglePostAttendance(postId);
-
-      // 2. Update the main _posts list with the updated post from the server.
-      // This is the source of truth.
       _updatePostInList(_posts, updatedPostFromServer);
       print('DEBUG: Main _posts list updated for ${updatedPostFromServer.id}.');
 
@@ -260,9 +255,6 @@ class PostProvider extends ChangeNotifier {
         print('DEBUG: Removed post ${updatedPostFromServer.id} from _attendedPosts.');
       }
 
-      // 4. Crucially, update the _interestedPosts list based on the server's response.
-      // If the backend automatically removes interest when attendance is marked,
-      // this logic will correctly reflect that.
       final isNowInterested = updatedPostFromServer.interestedUsers.contains(currentUserId);
       if (isNowInterested) {
         _updatePostInList(_interestedPosts, updatedPostFromServer);

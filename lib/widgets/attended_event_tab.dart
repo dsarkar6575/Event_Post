@@ -31,15 +31,6 @@ class _AttendedEventsTabState extends State<AttendedEventsTab> {
     // when PostProvider notifies listeners.
     return Consumer<PostProvider>(
       builder: (context, postProvider, _) {
-        // --- DEBUGGING PRINTS (Gated with kDebugMode) ---
-        if (kDebugMode) {
-          print('--- AttendedEventsTab Build ---');
-          print('Current User ID: $currentUserId');
-          print('PostProvider isLoading: ${postProvider.isLoading}');
-          print('PostProvider error: ${postProvider.error}');
-          print('Attended posts in PostProvider: ${postProvider.attendedPosts.length}');
-        }
-        // --- END DEBUGGING PRINTS ---
 
         // Use the directly fetched attendedPosts list from the provider.
         // The provider already ensures this list is up-to-date.

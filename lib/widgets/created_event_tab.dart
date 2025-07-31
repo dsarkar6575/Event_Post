@@ -42,6 +42,9 @@ class CreatedEventsTab extends StatelessWidget {
                 await postProvider.togglePostInterest(post.id, currentUserId);
               }
             },
+            onMarkAttended: (postId) async {
+                  await postProvider.togglePostAttendance(postId, currentUserId!);
+                },
             onDelete: () async {
               await postProvider.deletePost(post.id);
             },
