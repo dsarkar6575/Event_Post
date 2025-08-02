@@ -198,72 +198,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             currentUserId == null
                                 ? null
                                 : () async {
-                                  final alreadyInterested = _post!
-                                      .interestedUsers
-                                      .contains(currentUserId);
-
-                                  if (alreadyInterested) {
-                                    // Just remove interest
-                                    await postProvider.togglePostInterest(
-                                      _post!.id,
-                                      currentUserId,
-                                    );
-                                    setState(() {
+                                  await postProvider.togglePostInterest(
+                                    _post!.id,
+                                    currentUserId,
+                                  );
+                                  setState(() {
+                                    if (isInterested) {
                                       _post!.interestedUsers.remove(
                                         currentUserId,
                                       );
-                                    });
-                                  } else {
-                                    // Ask if user wants to join chat
-                                    final shouldJoinChat = await showDialog<
-                                      bool
-                                    >(
-                                      context: context,
-                                      builder:
-                                          (context) => AlertDialog(
-                                            title: const Text(
-                                              "Join Chat Group?",
-                                            ),
-                                            content: const Text(
-                                              "Do you want to join the chat group for this event?",
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      context,
-                                                      false,
-                                                    ),
-                                                child: const Text("No"),
-                                              ),
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      context,
-                                                      true,
-                                                    ),
-                                                child: const Text("Yes"),
-                                              ),
-                                            ],
-                                          ),
-                                    );
-
-                                    // Always mark as interested
-                                    await postProvider.togglePostInterest(
-                                      _post!.id,
-                                      currentUserId,
-                                    );
-                                    setState(() {
-                                      _post!.interestedUsers.add(currentUserId);
-                                    });
-
-                                    // Join chat group if agreed
-                                    if (shouldJoinChat == true) {
-                                      await postProvider.joinChatGroup(
-                                        _post!.id,
+                                    } else {
+                                      _post!.interestedUsers.add(
+                                        currentUserId!,
                                       );
                                     }
-                                  }
+                                  });
                                 },
                         icon: Icon(
                           isInterested ? Icons.star : Icons.star_border,
@@ -292,7 +241,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                         currentUserId,
                                       );
                                     } else {
-                                      _post!.attendedUsers.add(currentUserId);
+                                      _post!.attendedUsers.add(currentUserId!);
                                     }
                                   });
                                 },

@@ -55,9 +55,7 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
           }
           // Display a message if no posts are available after loading.
           if (postProvider.posts.isEmpty && !postProvider.isLoading) {
-            return const Center(
-              child: Text('No posts yet. Be the first to create one!'),
-            );
+            return const Center(child: Text('No posts yet. Be the first to create one!'));
           }
 
           // Use RefreshIndicator to allow users to manually refresh the list.
@@ -68,185 +66,94 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
               itemBuilder: (context, index) {
                 final post = postProvider.posts[index];
                 return PostCard(
-                  key: ValueKey(
-                    post.id,
-                  ), // IMPORTANT: Add ValueKey for efficient list updates
+                  key: ValueKey(post.id), // IMPORTANT: Add ValueKey for efficient list updates
                   post: post,
                   currentUserId: currentUserId,
                   // Pass the specific loading status for THIS post
-                  isLoading:
-                      currentUserId != null &&
-                      postProvider.isPostLoading(post.id),
-
+                  isLoading: currentUserId != null && postProvider.isPostLoading(post.id),
+                  
                   // Callback for when the user toggles interest on a post.
                   onToggleInterest: () async {
-                    final postProvider = Provider.of<PostProvider>(
-                      context,
-                      listen: false,
-                    );
-
                     if (currentUserId != null) {
-                      final alreadyInterested = post.interestedUsers.contains(
-                        currentUserId,
-                      );
-
-                      if (alreadyInterested) {
-                        // User is un-interested: just remove interest (no popup)
-                        try {
-                          await postProvider.togglePostInterest(
-                            post.id,
-                            currentUserId,
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to remove interest: $e'),
-                            ),
-                          );
-                        }
-                      } else {
-                        // Show join chat group popup
-                        final shouldJoinChat = await showDialog<bool>(
-                          context: context,
-                          builder:
-                              (context) => AlertDialog(
-                                title: const Text("Join Chat Group?"),
-                                content: const Text(
-                                  "Do you want to join the chat group for this event?",
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, false),
-                                    child: const Text("No"),
-                                  ),
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, true),
-                                    child: const Text("Yes"),
-                                  ),
-                                ],
-                              ),
+                      try {
+                        await postProvider.togglePostInterest(post.id, currentUserId);
+                        // No need to call fetchAllPosts() here.
+                        // PostProvider's internal logic updates _posts, and this Consumer rebuilds.
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to toggle interest: ${e.toString()}')),
                         );
-
-                        try {
-                          // Always mark as interested first
-                          await postProvider.togglePostInterest(
-                            post.id,
-                            currentUserId,
-                          );
-
-                          // Then join chat group if user agreed
-                          if (shouldJoinChat == true) {
-                            await postProvider.joinChatGroup(post.id);
-                          }
-                        } catch (e) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                        }
                       }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please log in to express interest.'),
-                        ),
-                      );
+                       ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please log in to express interest.')),
+                        );
                     }
                   },
-
+                  
                   // Callback for when the user marks an event as attended.
                   onMarkAttended: (postId) async {
                     if (currentUserId != null) {
                       try {
-                        await postProvider.togglePostAttendance(
-                          postId,
-                          currentUserId,
-                        );
+                        await postProvider.togglePostAttendance(postId, currentUserId);
                         // No need to call fetchAllPosts() here.
                         // PostProvider's internal logic updates _posts, and this Consumer rebuilds.
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Marked as attended!")),
+                           const SnackBar(content: Text("Marked as attended!")),
                         );
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Failed to mark attended: ${e.toString()}',
-                            ),
-                          ),
+                          SnackBar(content: Text('Failed to mark attended: ${e.toString()}')),
                         );
                       }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please log in to mark attendance.'),
-                        ),
-                      );
+                       ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please log in to mark attendance.')),
+                        );
                     }
                     return; // Added return type as Future<void> Function(String postId)
                   },
-
+                  
                   // Callback for when the user deletes a post.
                   onDelete: () async {
-                    if (currentUserId != null &&
-                        currentUserId == post.authorId) {
-                      // Ensure only author can delete
-                      // Show a confirmation dialog before deleting
-                      bool confirmDelete =
-                          await showDialog(
-                            context: context,
-                            builder:
-                                (context) => AlertDialog(
-                                  title: const Text('Delete Post'),
-                                  content: const Text(
-                                    'Are you sure you want to delete this post?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed:
-                                          () =>
-                                              Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    FilledButton(
-                                      onPressed:
-                                          () => Navigator.of(context).pop(true),
-                                      child: const Text('Delete'),
-                                    ),
-                                  ],
-                                ),
-                          ) ??
-                          false; // Default to false if dialog is dismissed
-
+                    if (currentUserId != null && currentUserId == post.authorId) { // Ensure only author can delete
+                       // Show a confirmation dialog before deleting
+                      bool confirmDelete = await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Delete Post'),
+                          content: const Text('Are you sure you want to delete this post?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      ) ?? false; // Default to false if dialog is dismissed
+                      
                       if (confirmDelete) {
                         try {
                           await postProvider.deletePost(post.id);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Post deleted successfully!'),
-                            ),
+                            const SnackBar(content: Text('Post deleted successfully!')),
                           );
                           // No need to call fetchAllPosts() here.
                           // PostProvider's internal logic updates _posts, and this Consumer rebuilds.
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to delete post: ${e.toString()}',
-                              ),
-                            ),
+                            SnackBar(content: Text('Failed to delete post: ${e.toString()}')),
                           );
                         }
                       }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'You are not authorized to delete this post.',
-                          ),
-                        ),
-                      );
+                       ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('You are not authorized to delete this post.')),
+                        );
                     }
                   },
                   // You might also want to add onComment and onShare here if they involve provider actions

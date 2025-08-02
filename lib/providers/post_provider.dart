@@ -2,19 +2,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:myapp/core/api_constants.dart';
 import 'package:myapp/models/post_model.dart';
-import 'package:myapp/services/api_base_service.dart';
 import 'package:myapp/services/post_service.dart';
 
 class PostProvider extends ChangeNotifier {
-  final PostService postService =
-      PostService(); // Consider injecting this for testability
+  final PostService postService = PostService(); // Consider injecting this for testability
   List<Post> _posts = [];
   List<Post> _interestedPosts = [];
-  bool _isLoading =
-      false; // General loading for initial fetches (e.g., fetchAllPosts)
+  bool _isLoading = false; // General loading for initial fetches (e.g., fetchAllPosts)
   String? _error; // General error for fetches
 
   List<Post> _attendedPosts = [];
@@ -27,9 +22,7 @@ class PostProvider extends ChangeNotifier {
   List<Post> get posts => _posts;
   List<Post> get interestedPosts => _interestedPosts;
   bool get isLoading => _isLoading; // General loading state
-  String? get error => _error;
-
-  get _baseUrl => ApiConstants.baseUrl; // General error state
+  String? get error => _error; // General error state
 
   // New: Check if a specific post is currently loading due to an action
   bool isPostLoading(String postId) => _loadingPostIds.contains(postId);
@@ -40,8 +33,7 @@ class PostProvider extends ChangeNotifier {
   bool _updatePostInList(List<Post> list, Post updatedPost) {
     final index = list.indexWhere((p) => p.id == updatedPost.id);
     if (index != -1) {
-      if (list[index] != updatedPost) {
-        // Only update if content changed (requires == in Post model)
+      if (list[index] != updatedPost) { // Only update if content changed (requires == in Post model)
         list[index] = updatedPost;
         return true;
       }
@@ -54,10 +46,11 @@ class PostProvider extends ChangeNotifier {
 
   // Safely removes a post from a given list.
   // Returns true if removed, false otherwise.
-  void _removePostFromList(List<Post> list, String postId) {
-    list.removeWhere((p) => p.id == postId);
-  }
+ void _removePostFromList(List<Post> list, String postId) {
+  list.removeWhere((p) => p.id == postId);
+}
   // --- End Utility Methods ---
+
 
   Future<void> fetchAllPosts() async {
     if (_isLoading) return; // Prevent multiple simultaneous fetches
@@ -116,8 +109,7 @@ class PostProvider extends ChangeNotifier {
     String postId, {
     String? title,
     String? description,
-    List<String>?
-    mediaUrls, // This parameter is usually handled by backend, not directly passed from UI for update
+    List<String>? mediaUrls, // This parameter is usually handled by backend, not directly passed from UI for update
     bool? isEvent,
     DateTime? eventDateTime,
     String? location,
@@ -139,17 +131,11 @@ class PostProvider extends ChangeNotifier {
         newMediaFile: newMediaFile,
         clearExistingMedia: clearExistingMedia,
       );
-
+      
       // Update all relevant lists
       _updatePostInList(_posts, updatedPost);
-      _updatePostInList(
-        _interestedPosts,
-        updatedPost,
-      ); // If it was in interested, update it
-      _updatePostInList(
-        _attendedPosts,
-        updatedPost,
-      ); // If it was in attended, update it
+      _updatePostInList(_interestedPosts, updatedPost); // If it was in interested, update it
+      _updatePostInList(_attendedPosts, updatedPost); // If it was in attended, update it
 
       _error = null;
     } catch (e) {
@@ -184,9 +170,8 @@ class PostProvider extends ChangeNotifier {
   }
 
   Future<void> togglePostInterest(String postId, String currentUserId) async {
-    if (_loadingPostIds.contains(postId))
-      return; // Prevent multiple actions on the same post
-
+    if (_loadingPostIds.contains(postId)) return; // Prevent multiple actions on the same post
+    
     _loadingPostIds.add(postId); // Start loading for this specific post
     notifyListeners(); // Notify to show individual post loading indicator
 
@@ -202,12 +187,10 @@ class PostProvider extends ChangeNotifier {
       } else {
         _removePostFromList(_interestedPosts, updatedPost.id);
       }
-      print(
-        'DEBUG: Post ${updatedPost.id}: User $currentUserId toggled interest. Server response processed.',
-      );
+      print('DEBUG: Post ${updatedPost.id}: User $currentUserId toggled interest. Server response processed.');
+
     } catch (e) {
-      _error =
-          e.toString(); // Set a general error, or pass specific error back to UI
+      _error = e.toString(); // Set a general error, or pass specific error back to UI
       print('Toggle Post Interest Error: $_error');
       rethrow; // Re-throw so the UI can catch and show a snackbar/dialog
     } finally {
@@ -240,9 +223,7 @@ class PostProvider extends ChangeNotifier {
 
     try {
       _attendedPosts = await postService.getAttendedPosts();
-      print(
-        'DEBUG: Fetched ${_attendedPosts.length} attended posts via fetchAttendedPosts().',
-      );
+      print('DEBUG: Fetched ${_attendedPosts.length} attended posts via fetchAttendedPosts().');
     } catch (e) {
       _error = e.toString();
       print('Fetch Attended Posts Error: $_error');
@@ -253,71 +234,44 @@ class PostProvider extends ChangeNotifier {
   }
 
   Future<void> togglePostAttendance(String postId, String currentUserId) async {
-    if (_loadingPostIds.contains(postId))
-      return; // Prevent multiple actions on the same post
+    if (_loadingPostIds.contains(postId)) return; // Prevent multiple actions on the same post
 
     _loadingPostIds.add(postId); // Start loading for this specific post
     notifyListeners(); // Notify listeners to show individual post loading indicator
 
     try {
-      final updatedPostFromServer = await postService.togglePostAttendance(
-        postId,
-      );
+      final updatedPostFromServer = await postService.togglePostAttendance(postId);
       _updatePostInList(_posts, updatedPostFromServer);
       print('DEBUG: Main _posts list updated for ${updatedPostFromServer.id}.');
 
       // 3. Update the _attendedPosts list based on the new status from the server
-      final isNowAttended = updatedPostFromServer.attendedUsers.contains(
-        currentUserId,
-      );
+      final isNowAttended = updatedPostFromServer.attendedUsers.contains(currentUserId);
 
       if (isNowAttended) {
         _updatePostInList(_attendedPosts, updatedPostFromServer);
-        print(
-          'DEBUG: Added/Updated post ${updatedPostFromServer.id} in _attendedPosts.',
-        );
+        print('DEBUG: Added/Updated post ${updatedPostFromServer.id} in _attendedPosts.');
       } else {
         _removePostFromList(_attendedPosts, updatedPostFromServer.id);
-        print(
-          'DEBUG: Removed post ${updatedPostFromServer.id} from _attendedPosts.',
-        );
+        print('DEBUG: Removed post ${updatedPostFromServer.id} from _attendedPosts.');
       }
 
-      final isNowInterested = updatedPostFromServer.interestedUsers.contains(
-        currentUserId,
-      );
+      final isNowInterested = updatedPostFromServer.interestedUsers.contains(currentUserId);
       if (isNowInterested) {
         _updatePostInList(_interestedPosts, updatedPostFromServer);
-        print(
-          'DEBUG: Added/Updated post ${updatedPostFromServer.id} in _interestedPosts (still interested).',
-        );
+        print('DEBUG: Added/Updated post ${updatedPostFromServer.id} in _interestedPosts (still interested).');
       } else {
         // If the user is no longer interested (e.g., because they attended), remove from interestedPosts.
         _removePostFromList(_interestedPosts, updatedPostFromServer.id);
-        print(
-          'DEBUG: Removed post ${updatedPostFromServer.id} from _interestedPosts (no longer interested).',
-        );
+        print('DEBUG: Removed post ${updatedPostFromServer.id} from _interestedPosts (no longer interested).');
       }
+
     } catch (e) {
-      _error =
-          e.toString(); // Set a general error, or pass specific error back to UI
+      _error = e.toString(); // Set a general error, or pass specific error back to UI
       print('Error toggling post attendance: $e');
       rethrow; // Re-throw so the UI can catch and show a snackbar/dialog
     } finally {
       _loadingPostIds.remove(postId); // End loading for this specific post
       notifyListeners(); // Important: Notify listeners after all state changes
-    }
-  }
-
-  // Join Chat
-  final PostService _postService = PostService();
-  Future<void> joinChatGroup(String postId) async {
-    try {
-      await _postService.joinChatGroup(postId);
-      print('Successfully joined chat group for post: $postId');
-    } catch (e) {
-      print('Failed to join chat group: $e');
-      throw Exception('Failed to join chat group: $e');
     }
   }
 }
