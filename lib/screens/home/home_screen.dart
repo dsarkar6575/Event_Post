@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/providers/theme_provider.dart';
+import 'package:myapp/screens/chat/chat_feed_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/providers/event_provider.dart';
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static final List<Widget> _widgetOptions = <Widget>[
     const PostFeedScreen(),
+    const ChatFeedScreen(),
     const CreatePostScreen(),
     const EventFeedScreen(),
     // Placeholder for own profile, will navigate
@@ -37,10 +39,12 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return 'Home';
       case 1:
-        return 'Create Post';
+        return 'Chat';
       case 2:
-        return 'My Events';
+        return 'Create Post';
       case 3:
+        return 'My Events';
+      case 4:
         return 'My Profile';
       default:
         return 'Event App';
@@ -116,10 +120,8 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.add_box),
-            label: 'Post',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
+          const BottomNavigationBarItem(icon: Icon(Icons.add_box),label: 'Post',),
           BottomNavigationBarItem(
             icon: Stack(
               children: [
@@ -151,10 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             label: 'Events',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile',),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blueAccent,

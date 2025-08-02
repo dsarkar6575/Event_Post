@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:myapp/core/api_constants.dart';
@@ -10,6 +11,8 @@ import 'package:path/path.dart' as p;
 
 class PostService {
   final ApiBaseService _apiService = ApiBaseService();
+  
+  get baseUrl => ApiConstants.baseUrl;
 
   // Helper function to safely get MIME type
   MediaType _getMediaType(String filePath) {
@@ -311,4 +314,17 @@ class PostService {
       rethrow;
     }
   }
+
+  // Join Chat
+  final ApiBaseService _apiBaseService = ApiBaseService();
+
+  Future<void> joinChatGroup(String postId) async {
+    final response = await _apiBaseService.post(
+      '/posts/$postId/join-chat',
+      {}, // You need to send a body even if it's empty
+    );
+    // Optional: check response status or parse data
+    print('Join Chat Group response: $response');
+  }
+
 }

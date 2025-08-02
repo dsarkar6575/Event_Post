@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/models/post_model.dart';
+import 'package:myapp/providers/post_provider.dart';
 import 'package:myapp/utils/app_router.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -243,7 +245,68 @@ class _PostCardState extends State<PostCard> {
                 else if (post.isEvent && !isExpired)
                   // "Interest" button for events that are not yet expired
                   TextButton.icon(
-                    onPressed: isActionLoading ? null : widget.onToggleInterest,
+                    onPressed:
+                        isActionLoading
+                            ? null
+                            : () async {
+                              if (!isInterested) {
+                                // User is showing interest — ask if they want to join the chat
+                                final shouldJoinChat = await showDialog<bool>(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: const Text("Join Chat Group?"),
+                                        content: const Text(
+                                          "Do you want to join the chat group for this event?",
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  false,
+                                                ),
+                                            child: const Text("No"),
+                                          ),
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  true,
+                                                ),
+                                            child: const Text("Yes"),
+                                          ),
+                                        ],
+                                      ),
+                                );
+
+                                // Always add interest
+                                await Provider.of<PostProvider>(
+                                  context,
+                                  listen: false,
+                                ).togglePostInterest(
+                                  post.id,
+                                  widget.currentUserId!,
+                                );
+
+                                // Optionally join chat group
+                                if (shouldJoinChat == true) {
+                                  await Provider.of<PostProvider>(
+                                    context,
+                                    listen: false,
+                                  ).joinChatGroup(post.id);
+                                }
+                              } else {
+                                // User is removing interest — no popup
+                                await Provider.of<PostProvider>(
+                                  context,
+                                  listen: false,
+                                ).togglePostInterest(
+                                  post.id,
+                                  widget.currentUserId!,
+                                );
+                              }
+                            },
                     icon:
                         isActionLoading
                             ? const SizedBox(

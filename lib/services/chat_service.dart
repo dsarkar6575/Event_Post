@@ -1,49 +1,61 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:myapp/core/api_constants.dart';
-import 'package:myapp/models/chat_model.dart';
-import 'package:myapp/models/message_model.dart';
-import 'package:myapp/services/api_base_service.dart';
+import 'package:myapp/models/post_model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ChatService {
-  final ApiBaseService _apiService = ApiBaseService();
+  final _storage = const FlutterSecureStorage();
+  final _baseUrl = ApiConstants.baseUrl;
 
-  Future<Chat> startPrivateChat(String recipientId) async {
-    final response = await _apiService.post(
-      ApiConstants.startChatEndpoint,
-      {'recipientId': recipientId},
+  Future<String?> _getToken() async {
+    return await _storage.read(key: 'authToken');
+  }
+
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await _getToken();
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+  }
+
+  Future<List<Post>> getJoinedChats() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/chat/joined'),
+      headers: await _getHeaders(),
     );
-    return Chat.fromJson(response['chat']);
+
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((json) => Post.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load chats');
+    }
   }
 
-  Future<Chat> createGroupChat(List<String> participantIds, String groupName) async {
-    final response = await _apiService.post(
-      ApiConstants.createGroupChatEndpoint,
-      {'participantIds': participantIds, 'groupName': groupName},
+  Future<List<Map<String, dynamic>>> getMessages(String postId) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/chat/$postId/messages'),
+      headers: await _getHeaders(),
     );
-    return Chat.fromJson(response['chat']);
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load messages');
+    }
   }
 
-  Future<List<Chat>> getUserChats() async {
-    final response = await _apiService.get(ApiConstants.getUserChatsEndpoint);
-    return (response as List).map((chat) => Chat.fromJson(chat)).toList();
-  }
-
-  Future<List<Message>> getChatMessages(String chatId) async {
-    final response = await _apiService.get(ApiConstants.getChatMessagesEndpoint(chatId));
-    return (response as List).map((message) => Message.fromJson(message)).toList();
-  }
-
-  Future<Message> sendMessage(String chatId, String content, MessageType type) async {
-    final response = await _apiService.post(
-      ApiConstants.sendMessageEndpoint(chatId),
-      {'content': content, 'type': type.toString().split('.').last},
+  Future<void> sendMessage(String postId, String message) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/chat/$postId/messages'),
+      headers: await _getHeaders(),
+      body: json.encode({'text': message}),
     );
-    return Message.fromJson(response['message']);
-  }
 
-  Future<void> markMessageAsRead(String messageId) async {
-    await _apiService.put(
-      ApiConstants.markMessageAsReadEndpoint(messageId),
-      {}, // Empty body as per API description
-    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to send message');
+    }
   }
 }
