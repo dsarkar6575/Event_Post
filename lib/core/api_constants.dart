@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'https://event-backend-5dbb.onrender.com/api';
+  static const String baseUrl = 'https://event-backend-4rd9.onrender.com/api';
 
  
   static const String registerEndpoint = '/auth/register';
