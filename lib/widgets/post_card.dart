@@ -328,6 +328,9 @@ class _PostCardState extends State<PostCard> {
                   onPressed:
                       widget.onComment ??
                       () {
+                        print(
+                          '🔁 Navigating to comments for postId: ${post.id}',
+                        );
                         Navigator.of(context).pushNamed(
                           AppRouter.commentsRoute.replaceFirst(
                             ':postId',
