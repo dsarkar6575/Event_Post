@@ -6,6 +6,14 @@ import 'package:myapp/services/api_base_service.dart';
 class ChatService {
   final ApiBaseService _apiService = ApiBaseService();
 
+  Future<Chat> joinEventGroupChat(String postId) async {
+    final response = await _apiService.post(
+      ApiConstants.joinEventGroupChatEndpoint(postId),
+      {},
+    );
+    return Chat.fromJson(response['chat']);
+  }
+
   Future<Chat> startPrivateChat(String recipientId) async {
     final response = await _apiService.post(
       ApiConstants.startChatEndpoint,
@@ -32,18 +40,13 @@ class ChatService {
     return (response as List).map((message) => Message.fromJson(message)).toList();
   }
 
-  Future<Message> sendMessage(String chatId, String content, MessageType type) async {
-    final response = await _apiService.post(
-      ApiConstants.sendMessageEndpoint(chatId),
-      {'content': content, 'type': type.toString().split('.').last},
-    );
-    return Message.fromJson(response['message']);
-  }
-
   Future<void> markMessageAsRead(String messageId) async {
     await _apiService.put(
       ApiConstants.markMessageAsReadEndpoint(messageId),
-      {}, // Empty body as per API description
+      {},
     );
   }
+
+  // 🚨 NOTE: The sendMessage method has been removed from here.
+  // It is now handled exclusively by the SocketService.
 }

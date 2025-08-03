@@ -1,7 +1,6 @@
 class ApiConstants {
   static const String baseUrl = 'https://event-backend-5dbb.onrender.com/api';
 
- 
   static const String registerEndpoint = '/auth/register';
   static const String loginEndpoint = '/auth/login';
   static const String getAuthUserEndpoint = '/auth';
@@ -11,8 +10,9 @@ class ApiConstants {
   static const String createGroupChatEndpoint = '/chat/group';
   static const String getUserChatsEndpoint = '/chat';
   static String getChatMessagesEndpoint(String chatId) => '/chat/$chatId/messages';
-  static String sendMessageEndpoint(String chatId) => '/chat/$chatId/messages';
   static String markMessageAsReadEndpoint(String messageId) => '/chat/messages/$messageId/read';
+  // ✅ CORRECTED: Added dedicated endpoint for joining event chats
+  static String joinEventGroupChatEndpoint(String postId) => '/chat/join/$postId';
 
   // Notification Endpoints
   static const String getNotificationsEndpoint = '/notifications';
@@ -31,7 +31,7 @@ class ApiConstants {
   static String togglePostAttendanceEndpoint(String postId) => '/posts/$postId/attendance';
   static const String getAttendedPostsEndpoint = '/posts/my/attended';
 
-
+  // User Endpoints
   static String getUserProfileEndpoint(String userId) => '/users/$userId';
   static String updateUserProfileEndpoint(String userId) => '/users/$userId';
   static String getUserPostsEndpoint(String userId) => '/users/$userId/posts';

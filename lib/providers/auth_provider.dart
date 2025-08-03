@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:myapp/services/socket_service.dart';
 import 'package:myapp/utils/secure_storage.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -19,7 +20,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _token != null && _currentUser != null;
 
   AuthProvider() {
-    tryAutoLogin(); // ✅ Run on startup
+    tryAutoLogin();
   }
 
   Future<void> tryAutoLogin() async {
@@ -27,25 +28,23 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     final token = await SecureStorage.getToken();
-    final userId = await SecureStorage.getUserId();
-    final refreshToken = await SecureStorage.getRefreshToken(); // Get refresh token
 
-    print('🔐 Access Token from storage: $token');
-    print('🔑 Refresh Token from storage: $refreshToken');
-    print('🆔 User ID from storage: $userId');
-
-    if (token != null && userId != null) {
-      _token = token; // Set current token for use
+    if (token != null) {
+      _token = token;
       try {
-        _currentUser = await _authService.getAuthUser(); // AuthService will handle refresh
-        print('✅ Fetched current user: ${_currentUser?.username}');
+        // Attempt to fetch user data with the stored token
+        _currentUser = await _authService.getAuthUser();
+        print('✅ Auto-login successful for: ${_currentUser?.username}');
+        
+        // ✅ FIX: Connect to the socket on successful auto-login
+        SocketService().connect(_token!);
+
       } catch (e) {
-        print('❌ Failed to fetch user (likely invalid token or refresh failed): $e');
-        await logout(); // Invalid token or refresh failed — clear everything
+        print('❌ Auto-login failed, token might be expired: $e');
+        await logout(); // Clear invalid token and user data
       }
     } else {
-      print('⚠️ Token, refresh token, or user ID missing. Not logged in.');
-      await logout(); // Also handle clean state
+      print('⚠️ No token found for auto-login.');
     }
 
     _isLoading = false;
@@ -64,9 +63,12 @@ class AuthProvider extends ChangeNotifier {
 
       await SecureStorage.saveToken(_token!);
       await SecureStorage.saveUserId(_currentUser!.id);
-      if (response.refreshToken != null) { // Save refresh token if provided
+      if (response.refreshToken != null) {
         await SecureStorage.saveRefreshToken(response.refreshToken!);
       }
+
+      // ✅ FIX: Connect to the socket on successful registration
+      SocketService().connect(_token!);
 
       print('✅ Registration successful: ${_currentUser?.username}');
       return true;
@@ -84,7 +86,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
+    
     try {
       final response = await _authService.loginUser(email, password);
       _token = response.token;
@@ -92,9 +94,12 @@ class AuthProvider extends ChangeNotifier {
 
       await SecureStorage.saveToken(_token!);
       await SecureStorage.saveUserId(_currentUser!.id);
-      if (response.refreshToken != null) { // Save refresh token if provided
+      if (response.refreshToken != null) {
         await SecureStorage.saveRefreshToken(response.refreshToken!);
       }
+
+      // ✅ FIX: Moved the connect call to *after* getting the token.
+      SocketService().connect(_token!);
 
       print('✅ Login successful: ${_currentUser?.username}');
       return true;
@@ -109,11 +114,15 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // ✅ FIX: Disconnect from the socket when logging out.
+    SocketService().disconnect();
+
     _token = null;
     _currentUser = null;
-    await SecureStorage.clearAll(); // Clears access and refresh tokens, and user ID
+    await SecureStorage.clearAll();
+    
+    print('🚪 Logged out, socket disconnected, and storage cleared');
     notifyListeners();
-    print('🚪 Logged out and storage cleared');
   }
 
   void updateCurrentUser(User user) {

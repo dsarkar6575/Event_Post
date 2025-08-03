@@ -3,84 +3,106 @@ import 'package:myapp/models/post_model.dart';
 import 'package:myapp/screens/auth/login_screen.dart';
 import 'package:myapp/screens/auth/register_screen.dart';
 import 'package:myapp/screens/home/home_screen.dart';
-import 'package:myapp/screens/event/event_screen.dart'; // Assuming EventFeedScreen is in this file
+import 'package:myapp/screens/event/event_screen.dart';
 import 'package:myapp/screens/posts/create_post_screen.dart';
 import 'package:myapp/screens/posts/post_detail_screen.dart';
 import 'package:myapp/screens/posts/post_feed_screen.dart';
 import 'package:myapp/screens/posts/comments_screen.dart';
 import 'package:myapp/screens/profile/edit_profile_screen.dart';
 import 'package:myapp/screens/profile/profile_screen.dart';
-import 'package:myapp/screens/posts/edit_post_screen.dart'; // Import the new screen
+import 'package:myapp/screens/posts/edit_post_screen.dart';
+import 'package:myapp/screens/chat/chat_list_screen.dart'; // Import chat screens
+import 'package:myapp/screens/chat/chat_screen.dart';
+import 'package:myapp/models/chat_model.dart';
+
 
 class AppRouter {
+  // --- Route Constants ---
   static const String loginRoute = '/';
   static const String registerRoute = '/register';
   static const String homeRoute = '/home';
   static const String postFeedRoute = '/posts';
-  static const String createPostRoute = '/create_post';
+  static const String createPostRoute = '/create-post';
   static const String postDetailRoute = '/posts/:id';
-  static const String editPostRoute = '/posts/:id/edit'; // New route for editing
-  static const String chatListRoute = '/chats';
-  static const String chatRoute = '/chat/:chatId';
+  static const String editPostRoute = '/posts/:id/edit';
+  static const String commentsRoute = '/posts/:id/comments'; // Standardized for consistency
   static const String profileRoute = '/profile/:userId';
-  static const String editProfileRoute = '/edit_profile';
-  static const String eventRoute = '/event';
-  static const String commentsRoute = '/post/:postId/comments';
+  static const String editProfileRoute = '/profile/edit';
+  static const String eventRoute = '/events';
+
+  // ✅ ADDED Chat Route Constants
+  static const String chatListRoute = '/chats';
+  static const String chatRoute = '/chats/:chatId';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    final Uri uri = Uri.parse(settings.name!);
-    final String path = uri.path;
+    final uri = Uri.parse(settings.name!);
+    final pathSegments = uri.pathSegments;
 
-    // Handle static routes first
-    switch (path) {
-      case loginRoute:
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
-      case registerRoute:
+    // Handle root route '/'
+    if (pathSegments.isEmpty) {
+      return MaterialPageRoute(builder: (_) => const LoginScreen());
+    }
+
+    // Handle routes based on the first segment for better organization
+    final head = pathSegments[0];
+
+    switch (head) {
+      case 'register':
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
-      case homeRoute:
+      case 'home':
         return MaterialPageRoute(builder: (_) => const HomeScreen());
-      case postFeedRoute:
-        return MaterialPageRoute(builder: (_) => const PostFeedScreen());
-      case createPostRoute:
+      case 'posts':
+        if (pathSegments.length == 1) { // '/posts'
+          return MaterialPageRoute(builder: (_) => const PostFeedScreen());
+        }
+        if (pathSegments.length == 2) { // '/posts/:id'
+          final postId = pathSegments[1];
+          return MaterialPageRoute(builder: (_) => PostDetailScreen(postId: postId));
+        }
+        if (pathSegments.length == 3) { // '/posts/:id/edit' or '/posts/:id/comments'
+          final postId = pathSegments[1];
+          if (pathSegments[2] == 'edit') {
+            final post = settings.arguments as Post?;
+            if (post != null) {
+              return MaterialPageRoute(builder: (_) => EditPostScreen(post: post));
+            }
+          }
+          if (pathSegments[2] == 'comments') {
+            return MaterialPageRoute(builder: (_) => CommentsScreen(postId: postId));
+          }
+        }
+        break;
+      case 'create-post':
         return MaterialPageRoute(builder: (_) => const CreatePostScreen());
-      case eventRoute:
+      case 'events':
         return MaterialPageRoute(builder: (_) => const EventFeedScreen());
-      case editProfileRoute:
-        return MaterialPageRoute(builder: (_) => const EditProfileScreen());
+      case 'profile':
+        if (pathSegments.length == 2) { // '/profile/:userId'
+          final userId = pathSegments[1];
+          return MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId));
+        }
+        if (pathSegments.length == 2 && pathSegments[1] == 'edit') { // '/profile/edit'
+          return MaterialPageRoute(builder: (_) => const EditProfileScreen());
+        }
+        break;
+
+      // ✅ ADDED: Handler for both static and dynamic chat routes
+      case 'chats':
+        if (pathSegments.length == 1) { // '/chats'
+          return MaterialPageRoute(builder: (_) => const ChatListScreen());
+        }
+        if (pathSegments.length == 2) { // '/chats/:chatId'
+          final chatId = pathSegments[1];
+          final chat = settings.arguments as Chat?; // Pass the chat object if available
+          return MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, chat: chat));
+        }
+        break;
     }
 
-    // Handle dynamic routes
-    if (path.startsWith('/posts/') && path.endsWith('/edit') && path.split('/').length == 4) {
-      final postId = path.split('/')[2];
-      // You need to pass the actual Post object here,
-      // which means the navigation will likely happen from a PostCard
-      // or PostDetailScreen where the Post object is available.
-      // For now, we'll assume settings.arguments will provide the Post object.
-      // Alternatively, you would fetch the post here.
-      final Post? post = settings.arguments as Post?;
-      if (post != null) {
-        return MaterialPageRoute(builder: (_) => EditPostScreen(post: post));
-      }
-      return MaterialPageRoute(
-        builder: (_) => const Scaffold(
-          body: Center(child: Text('Error: Post data not provided for editing.')),
-        ),
-      );
-    } else if (path.startsWith('/posts/') && path.split('/').length == 3) {
-      final postId = path.split('/')[2];
-      return MaterialPageRoute(builder: (_) => PostDetailScreen(postId: postId));
-    } else if (path.startsWith('/post/') && path.endsWith('/comments')) {
-      final postId = path.split('/')[2];
-      return MaterialPageRoute(builder: (_) => CommentsScreen(postId: postId));
-    } else if (path.startsWith('/profile/')) {
-      final userId = path.split('/')[2];
-      return MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId));
-    }
-
-    // Fallback for unknown routes
+    // Fallback for any unknown routes
     return MaterialPageRoute(
-      builder: (_) => const Scaffold(
-        body: Center(child: Text('Error: Unknown route')),
+      builder: (_) => Scaffold(
+        body: Center(child: Text('Error: No route defined for ${settings.name}')),
       ),
     );
   }

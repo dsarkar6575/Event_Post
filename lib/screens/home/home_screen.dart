@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/providers/chat_provider.dart';
 import 'package:myapp/providers/theme_provider.dart';
+import 'package:myapp/screens/chat/chat_list_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/providers/event_provider.dart';
@@ -21,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static final List<Widget> _widgetOptions = <Widget>[
     const PostFeedScreen(),
+     ChatListScreen(),
     const CreatePostScreen(),
     const EventFeedScreen(),
     // Placeholder for own profile, will navigate
@@ -37,10 +40,12 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return 'Home';
       case 1:
-        return 'Create Post';
+        return 'Chats';
       case 2:
-        return 'My Events';
+        return 'Create Post';
       case 3:
+        return 'My Events';
+      case 4:
         return 'My Profile';
       default:
         return 'Event App';
@@ -57,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final eventProvider = Provider.of<EventProvider>(context);
+    final chatProvider = Provider.of<ChatProvider>(context); 
 
     // If for some reason user is null, navigate back to login
     if (!authProvider.isAuthenticated) {
@@ -116,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          const BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
           const BottomNavigationBarItem(
             icon: Icon(Icons.add_box),
             label: 'Post',

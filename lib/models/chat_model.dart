@@ -43,7 +43,7 @@ class Chat {
   factory Chat.fromJson(Map<String, dynamic> json) {
     return Chat(
       id: json['_id'],
-      chatName: json['chatName'],
+      chatName: json['groupName'],
       isGroupChat: json['isGroupChat'] ?? false,
       participants: (json['participants'] as List)
           .map((p) => User.fromJson(p))
