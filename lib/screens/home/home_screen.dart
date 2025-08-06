@@ -64,9 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final eventProvider = Provider.of<EventProvider>(context);
     final chatProvider = Provider.of<ChatProvider>(context); 
 
-    // If for some reason user is null, navigate back to login
+
     if (!authProvider.isAuthenticated) {
-      // Use WidgetsBinding.instance.addPostFrameCallback to ensure context is valid
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
       });
@@ -94,11 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   listen: false,
                 );
 
-                // Get current effective brightness
                 final currentBrightness = Theme.of(context).brightness;
                 final isDark = currentBrightness == Brightness.dark;
-
-                // Toggle to opposite of current brightness
                 themeProvider.toggleTheme(!isDark);
               }
             },
@@ -167,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // To show all labels
+        type: BottomNavigationBarType.fixed, 
       ),
     );
   }
