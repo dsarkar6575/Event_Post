@@ -33,20 +33,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final currentUserId = Provider.of<AuthProvider>(context, listen: false).currentUser?.id;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chats'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.group_add),
-            onPressed: () {
-              // TODO: Implement create group chat UI
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Create Group Chat not yet implemented.')),
-              );
-            },
-          ),
-        ],
-      ),
       body: Consumer<ChatProvider>(
         builder: (context, chatProvider, child) {
           if (chatProvider.isLoading && chatProvider.userChats.isEmpty) {

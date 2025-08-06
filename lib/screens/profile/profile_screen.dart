@@ -105,47 +105,72 @@ class _ProfileScreenState extends State<ProfileScreen>
                         padding: EdgeInsets.all(20.0),
                         child: Text("No posts yet."),
                       )
-                      : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(bottom: 16),
-                        itemCount: userProvider.userPosts.length,
-                        itemBuilder: (context, index) {
-                          final post = userProvider.userPosts[index];
-                          return PostCard(
-                            post: post,
-                            currentUserId: currentUserId,
-                            onToggleInterest: () async {
-                              await Provider.of<PostProvider>(
-                                context,
-                                listen: false,
-                              ).togglePostInterest(post.id, currentUserId!);
-                              await userProvider.fetchUserPosts(
-                                widget.userId,
-                              ); // <== force UI refresh
-                            },
-                            onMarkAttended: (postId) async {
-                              await Provider.of<PostProvider>(
-                                context,
-                                listen: false,
-                              ).togglePostAttendance(postId, currentUserId!);
-                              await userProvider.fetchUserPosts(
-                                widget.userId,
-                              ); // <== force UI refresh
-                            },
-                            onComment: () {
-                              Navigator.of(context).pushNamed(
-                                AppRouter.commentsRoute.replaceFirst(
-                                  ':postId',
-                                  post.id,
-                                ),
+                      : Consumer<PostProvider>(
+                        builder: (context, postProvider, _) {
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.only(bottom: 16),
+                            itemCount: userProvider.userPosts.length,
+                            itemBuilder: (context, index) {
+                              final post = userProvider.userPosts[index];
+                              final updatedPost = postProvider.posts.firstWhere(
+                                (p) => p.id == post.id,
+                                orElse:
+                                    () =>
+                                        post, // fallback if not in PostProvider list
                               );
-                            },
-                            onShare: () {
-                              final shareText =
-                                  '${post.title}\n\n${post.description}';
-                              // ignore: deprecated_member_use
-                              Share.share(shareText);
+                              final isLoading = postProvider.isPostLoading(
+                                post.id,
+                              );
+
+                              return PostCard(
+                                post: updatedPost,
+                                currentUserId: currentUserId,
+                                isLoading: isLoading,
+                                onToggleInterest:
+                                    currentUserId == null
+                                        ? null
+                                        : () async {
+                                          try {
+                                            await postProvider
+                                                .togglePostInterest(
+                                                  post.id,
+                                                  currentUserId,
+                                                );
+                                            // ❌ Do NOT call fetchUserPosts again — just rebuild the UI locally
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Please log in to express interest.',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                onMarkAttended: (postId) async {
+                                  await postProvider.togglePostAttendance(
+                                    postId,
+                                    currentUserId!,
+                                  );
+                                },
+                                onComment: () {
+                                  Navigator.of(context).pushNamed(
+                                    AppRouter.commentsRoute.replaceFirst(
+                                      ':postId',
+                                      post.id,
+                                    ),
+                                  );
+                                },
+                                onShare: () {
+                                  final shareText =
+                                      '${post.title}\n\n${post.description}';
+                                  Share.share(shareText);
+                                },
+                              );
                             },
                           );
                         },

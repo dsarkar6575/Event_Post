@@ -169,35 +169,35 @@ class PostProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> togglePostInterest(String postId, String currentUserId) async {
-    if (_loadingPostIds.contains(postId)) return; // Prevent multiple actions on the same post
-    
-    _loadingPostIds.add(postId); // Start loading for this specific post
-    notifyListeners(); // Notify to show individual post loading indicator
+  Future<Post> togglePostInterest(String postId, String currentUserId) async {
+  if (_loadingPostIds.contains(postId)) return Future.error("Already loading");
 
-    try {
-      final updatedPost = await postService.togglePostInterest(postId);
+  _loadingPostIds.add(postId);
+  notifyListeners();
 
-      // Update main posts list
-      _updatePostInList(_posts, updatedPost);
+  try {
+    final updatedPost = await postService.togglePostInterest(postId);
 
-      // Update interestedPosts list based on the new state returned from server
-      if (updatedPost.interestedUsers.contains(currentUserId)) {
-        _updatePostInList(_interestedPosts, updatedPost);
-      } else {
-        _removePostFromList(_interestedPosts, updatedPost.id);
-      }
-      print('DEBUG: Post ${updatedPost.id}: User $currentUserId toggled interest. Server response processed.');
+    // Update post in internal lists
+    _updatePostInList(_posts, updatedPost);
 
-    } catch (e) {
-      _error = e.toString(); // Set a general error, or pass specific error back to UI
-      print('Toggle Post Interest Error: $_error');
-      rethrow; // Re-throw so the UI can catch and show a snackbar/dialog
-    } finally {
-      _loadingPostIds.remove(postId); // End loading for this specific post
-      notifyListeners(); // Important: Notify listeners after all state changes
+    if (updatedPost.interestedUsers.contains(currentUserId)) {
+      _updatePostInList(_interestedPosts, updatedPost);
+    } else {
+      _removePostFromList(_interestedPosts, updatedPost.id);
     }
+
+    return updatedPost; // ✅ Return updated post
+  } catch (e) {
+    _error = e.toString();
+    print('Toggle Post Interest Error: $_error');
+    rethrow;
+  } finally {
+    _loadingPostIds.remove(postId);
+    notifyListeners();
   }
+}
+
 
   Future<void> fetchInterestedPosts() async {
     _isLoading = true;

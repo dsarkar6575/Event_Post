@@ -77,8 +77,6 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
                     if (currentUserId != null) {
                       try {
                         await postProvider.togglePostInterest(post.id, currentUserId);
-                        // No need to call fetchAllPosts() here.
-                        // PostProvider's internal logic updates _posts, and this Consumer rebuilds.
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Failed to toggle interest: ${e.toString()}')),

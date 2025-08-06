@@ -228,7 +228,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       );
                                     } else {
                                       _post!.interestedUsers.add(
-                                        currentUserId!,
+                                        currentUserId,
                                       );
                                     }
                                   });
@@ -260,7 +260,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                         currentUserId,
                                       );
                                     } else {
-                                      _post!.attendedUsers.add(currentUserId!);
+                                      _post!.attendedUsers.add(currentUserId);
                                     }
                                   });
                                 },
