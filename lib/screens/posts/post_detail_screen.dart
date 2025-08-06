@@ -132,14 +132,33 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
             const SizedBox(height: 16.0),
             if (_post!.mediaUrls.isNotEmpty)
-              Image.network(
-                _post!.mediaUrls.first, // Display first image for simplicity
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder:
-                    (context, error, stackTrace) =>
-                        const Icon(Icons.image_not_supported),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    _post!.mediaUrls.map((url) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            url,
+                            fit:
+                                BoxFit
+                                    .contain, // Preserve original aspect ratio
+                            width: double.infinity,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            },
+                            errorBuilder:
+                                (context, error, stackTrace) =>
+                                    const Icon(Icons.image_not_supported),
+                          ),
+                        ),
+                      );
+                    }).toList(),
               ),
             const SizedBox(height: 16.0),
             Text(_post!.description, style: const TextStyle(fontSize: 16)),
