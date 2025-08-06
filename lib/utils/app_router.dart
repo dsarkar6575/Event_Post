@@ -25,7 +25,7 @@ class AppRouter {
   static const String createPostRoute = '/create-post';
   static const String postDetailRoute = '/posts/:id';
   static const String editPostRoute = '/posts/:id/edit';
-  static const String commentsRoute = '/posts/:id/comments'; // Standardized for consistency
+  static const String commentsRoute = '/posts/:postId/comments'; // Standardized for consistency
   static const String profileRoute = '/profile/:userId';
   static const String editProfileRoute = '/profile/edit';
   static const String eventRoute = '/events';

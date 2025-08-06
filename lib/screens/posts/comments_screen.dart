@@ -18,6 +18,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<Comment> _comments = [];
   bool _isLoading = true;
+  bool _isSubmitting = false;
 
   Future<void> _fetchComments() async {
     setState(() => _isLoading = true);
@@ -36,29 +37,37 @@ class _CommentsScreenState extends State<CommentsScreen> {
     }
   }
 
- Future<void> _submitComment() async {
-  final content = _controller.text.trim();
-  if (content.isEmpty) return;
+  Future<void> _submitComment() async {
+    final content = _controller.text.trim();
+    if (content.isEmpty) return;
 
-  final authProvider = Provider.of<AuthProvider>(context, listen: false);
-  final user = authProvider.currentUser;
-  final token = authProvider.token;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
 
-  if (user == null || token == null) return;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to comment.')),
+      );
+      return;
+    }
 
-  try {
-    final newComment = await CommentService().createComment(widget.postId, content, token);
-    setState(() {
-      _comments.insert(0, newComment);
-      _controller.clear();
-    });
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error posting comment: $e')),
-    );
+    setState(() => _isSubmitting = true);
+
+    try {
+      final newComment =
+          await CommentService().createComment(widget.postId, content, token);
+      setState(() {
+        _comments.insert(0, newComment);
+        _controller.clear();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error posting comment: $e')),
+      );
+    } finally {
+      setState(() => _isSubmitting = false);
+    }
   }
-}
-
 
   @override
   void initState() {
@@ -83,11 +92,14 @@ class _CommentsScreenState extends State<CommentsScreen> {
                           final comment = _comments[index];
                           return ListTile(
                             leading: CircleAvatar(
-                              backgroundImage: comment.authorProfileImageUrl != null
-                                  ? NetworkImage(comment.authorProfileImageUrl!)
-                                  : null,
+                              backgroundImage:
+                                  comment.authorProfileImageUrl != null
+                                      ? NetworkImage(
+                                          comment.authorProfileImageUrl!)
+                                      : null,
                               child: comment.authorProfileImageUrl == null
-                                  ? Text(comment.authorUsername[0].toUpperCase())
+                                  ? Text(
+                                      comment.authorUsername[0].toUpperCase())
                                   : null,
                             ),
                             title: Text(comment.authorUsername),
@@ -115,10 +127,12 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _submitComment,
-                  child: const Text('Post'),
-                ),
+                _isSubmitting
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: _submitComment,
+                        child: const Text('Post'),
+                      ),
               ],
             ),
           ),
