@@ -4,6 +4,8 @@ class ApiConstants {
   static const String registerEndpoint = '/auth/register';
   static const String loginEndpoint = '/auth/login';
   static const String getAuthUserEndpoint = '/auth';
+  static const String verifyOtpEndpoint = '/auth/verify'; // Added for OTP verification
+  static const String refreshTokenEndpoint = '/auth/refresh-token'; // Added for token refresh
 
   // Chat Endpoints
   static const String startChatEndpoint = '/chat/start';

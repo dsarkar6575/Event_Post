@@ -1,27 +1,15 @@
-// myapp/services/auth_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:myapp/core/api_constants.dart';
+import 'package:myapp/models/auth_response_model.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/utils/secure_storage.dart';
 
 
-// Define an AuthResponse class to handle login/register responses
-class AuthResponse {
-  final String token;
-  final User user;
-  final String? refreshToken; // Added for refresh token
-
-  AuthResponse({required this.token, required this.user, this.refreshToken});
-}
-
 class AuthService {
-  // Use a common HTTP client instance, or use direct http calls
-  // For production apps, consider 'dio' for interceptors
   final http.Client _httpClient = http.Client();
 
   // Helper method for authenticated requests
-  // This is where you centralize token handling
   Future<http.Response> _authenticatedRequest(
       Future<http.Response> Function(String token) requestBuilder) async {
     String? accessToken = await SecureStorage.getToken();
@@ -34,24 +22,21 @@ class AuthService {
     http.Response response = await requestBuilder(accessToken);
 
     if (response.statusCode == 401 && refreshToken != null) {
-      // Access token might be expired, try refreshing
       print('Access token expired or invalid, attempting to refresh...');
       try {
         final newTokens = await _refreshAccessToken(refreshToken);
         final newAccessToken = newTokens['accessToken'];
         final newRefreshToken = newTokens['refreshToken'];
 
-        // Save new tokens
         await SecureStorage.saveToken(newAccessToken);
         if (newRefreshToken != null) {
           await SecureStorage.saveRefreshToken(newRefreshToken);
         }
-
+        
         // Retry the original request with the new access token
         response = await requestBuilder(newAccessToken);
       } catch (e) {
         print('Failed to refresh token: $e');
-        // If refresh fails, re-throw to trigger logout in AuthProvider
         rethrow;
       }
     }
@@ -59,9 +44,8 @@ class AuthService {
     return response;
   }
 
-  // Method to get a new access token using a refresh token
   Future<Map<String, dynamic>> _refreshAccessToken(String refreshToken) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}/auth/refresh-token'); // Adjust this endpoint
+    final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshTokenEndpoint}');
     final response = await _httpClient.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -70,41 +54,53 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      // Assuming your refresh endpoint returns 'accessToken' and possibly a new 'refreshToken'
       return {
         'accessToken': data['accessToken'],
-        'refreshToken': data['refreshToken'], // May be null if backend doesn't re-issue refresh token
+        'refreshToken': data['refreshToken'],
       };
     } else {
       throw Exception('Failed to refresh token: ${response.statusCode} - ${response.body}');
     }
   }
 
-  Future<AuthResponse> registerUser(String email, String username, String password) async {
+  // New method: Step 1 of registration, sends the OTP
+  Future<void> sendOtp(String email) async {
     final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.registerEndpoint}');
+    final response = await _httpClient.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'email': email}),
+    );
+
+    if (response.statusCode != 200) {
+      final errorData = json.decode(response.body);
+      throw Exception('Failed to send OTP: ${errorData['msg'] ?? response.statusCode}');
+    }
+  }
+
+  // New method: Step 2 of registration, verifies OTP and creates the user
+  Future<AuthResponse> verifyOtpAndRegister(String email, String otp, String username, String password) async {
+    final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.verifyOtpEndpoint}');
     final response = await _httpClient.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'email': email,
+        'otp': otp,
         'username': username,
         'password': password,
       }),
     );
 
-    if (response.statusCode == 201) { // Assuming 201 for successful creation
+    if (response.statusCode == 201) {
       final data = json.decode(response.body);
-      final token = data['token']; // Access token
-      final user = User.fromJson(data['user']);
-      final refreshToken = data['refreshToken']; // If your backend provides it
-
-      return AuthResponse(token: token, user: user, refreshToken: refreshToken);
+      return AuthResponse.fromJson(data);
     } else {
       final errorData = json.decode(response.body);
-      throw Exception('Registration failed: ${errorData['message'] ?? response.statusCode}');
+      throw Exception('Verification failed: ${errorData['msg'] ?? response.statusCode}');
     }
   }
-
+  
   Future<AuthResponse> loginUser(String email, String password) async {
     final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
     final response = await _httpClient.post(
@@ -118,9 +114,9 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final token = data['token']; // Access token
+      final token = data['token'];
       final user = User.fromJson(data['user']);
-      final refreshToken = data['refreshToken']; // If your backend provides it
+      final refreshToken = data['refreshToken'];
 
       return AuthResponse(token: token, user: user, refreshToken: refreshToken);
     } else {
@@ -130,7 +126,6 @@ class AuthService {
   }
 
   Future<User> getAuthUser() async {
-    // Use the authenticatedRequest helper for this call
     final response = await _authenticatedRequest((token) async {
       final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.getAuthUserEndpoint}');
       return await _httpClient.get(
@@ -151,7 +146,6 @@ class AuthService {
     }
   }
 
-  // Example of another authenticated call using the helper
   Future<void> createPost(Map<String, dynamic> postData) async {
     final response = await _authenticatedRequest((token) async {
       final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.createPostEndpoint}');
@@ -165,11 +159,9 @@ class AuthService {
       );
     });
 
-    if (response.statusCode != 201) { // Assuming 201 for creation
+    if (response.statusCode != 201) {
       final errorData = json.decode(response.body);
       throw Exception('Failed to create post: ${errorData['message'] ?? response.statusCode}');
     }
   }
-
-  // ... other methods in AuthService would also use _authenticatedRequest
 }
