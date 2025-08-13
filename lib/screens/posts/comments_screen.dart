@@ -21,21 +21,25 @@ class _CommentsScreenState extends State<CommentsScreen> {
   bool _isSubmitting = false;
 
   Future<void> _fetchComments() async {
-    setState(() => _isLoading = true);
-    try {
-      final comments = await CommentService().getComments(widget.postId);
-      setState(() {
-        _comments.clear();
-        _comments.addAll(comments);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load comments: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  setState(() => _isLoading = true);
+  try {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token ?? '';
+
+    final comments = await CommentService().getComments(widget.postId, token);
+    setState(() {
+      _comments.clear();
+      _comments.addAll(comments);
+    });
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to load comments: $e')),
+    );
+  } finally {
+    setState(() => _isLoading = false);
   }
+}
+
 
   Future<void> _submitComment() async {
     final content = _controller.text.trim();
