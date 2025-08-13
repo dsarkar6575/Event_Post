@@ -185,12 +185,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               ),
               const SizedBox(height: 8.0),
               Row(
-                children: [
-                  const Icon(Icons.location_on),
-                  const SizedBox(width: 8),
-                  Text(_post!.location ?? 'Location not specified'),
-                ],
-              ),
+  crossAxisAlignment: CrossAxisAlignment.start, // so wrapped lines align nicely
+  children: [
+    const Icon(Icons.location_on),
+    const SizedBox(width: 8),
+    Expanded(
+      child: Text(
+        _post!.location ?? 'Location not specified',
+        softWrap: true,
+        style: const TextStyle(fontSize: 14),
+      ),
+    ),
+  ],
+),
               const SizedBox(height: 16.0),
             ],
             Consumer<PostProvider>(
@@ -228,7 +235,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       );
                                     } else {
                                       _post!.interestedUsers.add(
-                                        currentUserId!,
+                                        currentUserId,
                                       );
                                     }
                                   });
@@ -260,7 +267,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                         currentUserId,
                                       );
                                     } else {
-                                      _post!.attendedUsers.add(currentUserId!);
+                                      _post!.attendedUsers.add(currentUserId);
                                     }
                                   });
                                 },

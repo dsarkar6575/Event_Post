@@ -73,14 +73,12 @@ class _PostCardState extends State<PostCard> {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage:
-                        post.author?.profileImageUrl != null
-                            ? NetworkImage(post.author!.profileImageUrl!)
-                            : null,
-                    child:
-                        post.author?.profileImageUrl == null
-                            ? Text(post.author?.username[0].toUpperCase() ?? '')
-                            : null,
+                    backgroundImage: post.author?.profileImageUrl != null
+                        ? NetworkImage(post.author!.profileImageUrl!)
+                        : null,
+                    child: post.author?.profileImageUrl == null
+                        ? Text(post.author?.username[0].toUpperCase() ?? '')
+                        : null,
                   ),
                   const SizedBox(width: 8.0),
                   Expanded(
@@ -117,8 +115,8 @@ class _PostCardState extends State<PostCard> {
                               ?.call(); // Call the onDelete callback from the parent
                         }
                       },
-                      itemBuilder:
-                          (BuildContext context) => <PopupMenuEntry<String>>[
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
                             const PopupMenuItem<String>(
                               value: 'edit',
                               child: Text('Edit Post'),
@@ -174,9 +172,8 @@ class _PostCardState extends State<PostCard> {
                               child: CircularProgressIndicator(),
                             );
                           },
-                          errorBuilder:
-                              (context, error, stackTrace) =>
-                                  const Icon(Icons.image_not_supported),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.image_not_supported),
                         ),
                       ),
                     ),
@@ -202,11 +199,16 @@ class _PostCardState extends State<PostCard> {
                         children: [
                           const Icon(Icons.location_on, size: 16),
                           const SizedBox(width: 4),
-                          Text(
-                            post.location!,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontStyle: FontStyle.italic,
+                          Expanded(
+                            child: Text(
+                              post.location!,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              overflow: TextOverflow
+                                  .ellipsis, // show "..." if too long
+                              maxLines: 1, // keep in a single line
                             ),
                           ),
                         ],
@@ -225,25 +227,23 @@ class _PostCardState extends State<PostCard> {
                 // Attend/Interested Button Logic
                 if (post.isEvent && isExpired)
                   TextButton.icon(
-                    onPressed:
-                        isActionLoading || widget.onMarkAttended == null
-                            ? null
-                            : () async {
-                              await widget.onMarkAttended!(post.id);
-                            },
-                    icon:
-                        isActionLoading
-                            ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : Icon(
-                              isAttended
-                                  ? Icons.check_circle
-                                  : Icons.check_circle_outline,
-                              color: isAttended ? Colors.green : Colors.grey,
-                            ),
+                    onPressed: isActionLoading || widget.onMarkAttended == null
+                        ? null
+                        : () async {
+                            await widget.onMarkAttended!(post.id);
+                          },
+                    icon: isActionLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            isAttended
+                                ? Icons.check_circle
+                                : Icons.check_circle_outline,
+                            color: isAttended ? Colors.green : Colors.grey,
+                          ),
                     label: Text(
                       '${post.attendedUsers.length} Attended',
                       style: TextStyle(
@@ -254,92 +254,83 @@ class _PostCardState extends State<PostCard> {
                 else if (post.isEvent && !isExpired)
                   // "Interest" button for events that are not yet expired
                   TextButton.icon(
-                    onPressed:
-                        isActionLoading
-                            ? null
-                            : () async {
-                              if (!isInterested) {
-                                // User is showing interest — ask if they want to join the chat
-                                final shouldJoinChat = await showDialog<bool>(
-                                  context: context,
-                                  builder:
-                                      (context) => AlertDialog(
-                                        title: const Text("Join Chat Group?"),
-                                        content: const Text(
-                                          "Do you want to join the chat group for this event?",
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed:
-                                                () => Navigator.pop(
-                                                  context,
-                                                  false,
-                                                ),
-                                            child: const Text("No"),
-                                          ),
-                                          TextButton(
-                                            onPressed:
-                                                () => Navigator.pop(
-                                                  context,
-                                                  true,
-                                                ),
-                                            child: const Text("Yes"),
-                                          ),
-                                        ],
-                                      ),
-                                );
+                    onPressed: isActionLoading
+                        ? null
+                        : () async {
+                            if (!isInterested) {
+                              // User is showing interest — ask if they want to join the chat
+                              final shouldJoinChat = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text("Join Chat Group?"),
+                                  content: const Text(
+                                    "Do you want to join the chat group for this event?",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("No"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text("Yes"),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                                // Always add interest
-                                await Provider.of<PostProvider>(
-                                  context,
-                                  listen: false,
-                                ).togglePostInterest(
-                                  post.id,
-                                  widget.currentUserId!,
-                                );
+                              // Always add interest
+                              await Provider.of<PostProvider>(
+                                context,
+                                listen: false,
+                              ).togglePostInterest(
+                                post.id,
+                                widget.currentUserId!,
+                              );
 
-                                // Optionally join chat group
-                                if (shouldJoinChat == true && context.mounted) {
-                                  // 1. Call the CORRECT provider (ChatProvider) and get the chat object back
-                                  final joinedChat =
-                                      await Provider.of<ChatProvider>(
-                                        context,
-                                        listen: false,
-                                      ).joinEventGroupChat(post.id);
+                              // Optionally join chat group
+                              if (shouldJoinChat == true && context.mounted) {
+                                // 1. Call the CORRECT provider (ChatProvider) and get the chat object back
+                                final joinedChat =
+                                    await Provider.of<ChatProvider>(
+                                      context,
+                                      listen: false,
+                                    ).joinEventGroupChat(post.id);
 
-                                  // 2. Use the returned chat object to NAVIGATE to the chat screen
-                                  if (joinedChat != null && context.mounted) {
-                                    Navigator.of(context).pushNamed(
-                                      AppRouter.chatRoute.replaceFirst(
-                                        ':chatId',
-                                        joinedChat.id,
-                                      ),
-                                      arguments: joinedChat,
-                                    );
-                                  }
+                                // 2. Use the returned chat object to NAVIGATE to the chat screen
+                                if (joinedChat != null && context.mounted) {
+                                  Navigator.of(context).pushNamed(
+                                    AppRouter.chatRoute.replaceFirst(
+                                      ':chatId',
+                                      joinedChat.id,
+                                    ),
+                                    arguments: joinedChat,
+                                  );
                                 }
-                              } else {
-                                // User is removing interest — no popup
-                                await Provider.of<PostProvider>(
-                                  context,
-                                  listen: false,
-                                ).togglePostInterest(
-                                  post.id,
-                                  widget.currentUserId!,
-                                );
                               }
-                            },
-                    icon:
-                        isActionLoading
-                            ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : Icon(
-                              isInterested ? Icons.star : Icons.star_border,
-                              color: isInterested ? Colors.blue : Colors.grey,
-                            ),
+                            } else {
+                              // User is removing interest — no popup
+                              await Provider.of<PostProvider>(
+                                context,
+                                listen: false,
+                              ).togglePostInterest(
+                                post.id,
+                                widget.currentUserId!,
+                              );
+                            }
+                          },
+                    icon: isActionLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            isInterested ? Icons.star : Icons.star_border,
+                            color: isInterested ? Colors.blue : Colors.grey,
+                          ),
                     label: Text('${post.interestedUsers.length} Interest'),
                   )
                 else if (!post.isEvent)
