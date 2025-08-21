@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'https://event-backend-5dbb.onrender.com/api';
+  static const String baseUrl = 'https://event-management-system-backend0.onrender.com/api';
 
   static const String registerEndpoint = '/auth/register';
   static const String loginEndpoint = '/auth/login';
@@ -27,6 +27,7 @@ class ApiConstants {
   static String getPostByIdEndpoint(String postId) => '/posts/$postId';
   static String updatePostEndpoint(String postId) => '/posts/$postId';
   static String deletePostEndpoint(String postId) => '/posts/$postId';
+  static const String getFeedPostsEndpoint = '/posts/feed';
   static String togglePostInterestEndpoint(String postId) => '/posts/$postId/interest';
   static String markAttendanceEndpoint(String postId) => '/posts/$postId/attend';
   static const String getInterestedPostsEndpoint = '/posts/my/interested';

@@ -29,7 +29,7 @@ class CreatedEventsTab extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      onRefresh: () async => await postProvider.fetchAllPosts(),
+      onRefresh: () async => await postProvider.fetchFeedPosts(),
       child: ListView.builder(
         itemCount: createdPosts.length,
         itemBuilder: (context, index) {

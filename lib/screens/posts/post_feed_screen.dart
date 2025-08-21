@@ -18,7 +18,7 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
     // Fetch all posts when the screen is initialized.
     // addPostFrameCallback ensures that the context is fully built before accessing it.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<PostProvider>(context, listen: false).fetchAllPosts();
+      Provider.of<PostProvider>(context, listen: false).fetchFeedPosts();
     });
   }
 
@@ -26,7 +26,7 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
   Future<void> _refreshPosts() async {
     // Only call fetchAllPosts. The PostProvider's internal logic will update
     // the lists, and the Consumer will rebuild.
-    await Provider.of<PostProvider>(context, listen: false).fetchAllPosts();
+    await Provider.of<PostProvider>(context, listen: false).fetchFeedPosts();
     // No need to call fetchInterestedPosts or fetchAttendedPosts here
     // unless you have separate tabs/views that rely on those lists
     // and those lists aren't automatically updated by fetchAllPosts if your

@@ -61,8 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final eventProvider = Provider.of<EventProvider>(context);
-    final chatProvider = Provider.of<ChatProvider>(context); 
+    final eventProvider = Provider.of<EventProvider>(context); 
 
 
     if (!authProvider.isAuthenticated) {

@@ -94,7 +94,7 @@ class _AttendedEventsTabState extends State<AttendedEventsTab> {
                   await postProvider.deletePost(post.id);
                   // A full refresh might still be desired here to ensure consistency
                   // across all tabs after a deletion.
-                  await postProvider.fetchAllPosts();
+                  await postProvider.fetchFeedPosts();
                 },
               );
             },

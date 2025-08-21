@@ -19,7 +19,7 @@ class _EventFeedScreenState extends State<EventFeedScreen> with SingleTickerProv
   void initState() {
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<PostProvider>(context, listen: false).fetchAllPosts();
+      Provider.of<PostProvider>(context, listen: false).fetchFeedPosts();
     });
     super.initState();
   }

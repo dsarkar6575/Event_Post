@@ -1,38 +1,45 @@
 class User {
   final String id;
-  final String? email; // ✅ Made nullable
+  final String? email; // Nullable
   final String username;
   final String? bio;
   final String? profileImageUrl;
   final List<String> followers;
   final List<String> following;
   final DateTime createdAt;
+  final String userType; // ✅ Added for personal/corporate
 
   User({
     required this.id,
-    required this.email, // now nullable
+    this.email, // ✅ Removed required
     required this.username,
     this.bio,
     this.profileImageUrl,
     this.followers = const [],
     this.following = const [],
     required this.createdAt,
+    this.userType = 'personal', // default value
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['_id'] ?? '',
-      email: json['email'] as String?, // ✅ handles missing or null
+      email: json['email'] as String?,
       username: json['username'] ?? '',
       bio: json['bio'] as String?,
-       profileImageUrl: json['profileImageUrl'] is String
-        ? json['profileImageUrl'] as String
-        : null,
-      followers: List<String>.from(json['followers'] ?? []),
-      following: List<String>.from(json['following'] ?? []),
+      profileImageUrl: json['profileImageUrl'] as String?, // ✅ simpler
+      followers: (json['followers'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      following: (json['following'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
-          : DateTime.now(), // fallback
+          : DateTime.now(),
+      userType: json['userType'] ?? 'personal', // ✅ handle corporate/personal
     );
   }
 
@@ -46,6 +53,7 @@ class User {
       'followers': followers,
       'following': following,
       'createdAt': createdAt.toIso8601String(),
+      'userType': userType,
     };
   }
 
@@ -58,6 +66,7 @@ class User {
     List<String>? followers,
     List<String>? following,
     DateTime? createdAt,
+    String? userType,
   }) {
     return User(
       id: id ?? this.id,
@@ -68,6 +77,7 @@ class User {
       followers: followers ?? this.followers,
       following: following ?? this.following,
       createdAt: createdAt ?? this.createdAt,
+      userType: userType ?? this.userType,
     );
   }
 }

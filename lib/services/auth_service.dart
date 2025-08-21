@@ -5,11 +5,10 @@ import 'package:myapp/models/auth_response_model.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/utils/secure_storage.dart';
 
-
 class AuthService {
   final http.Client _httpClient = http.Client();
 
-  // Helper method for authenticated requests
+  /// ✅ Handles authenticated requests with automatic token refresh
   Future<http.Response> _authenticatedRequest(
       Future<http.Response> Function(String token) requestBuilder) async {
     String? accessToken = await SecureStorage.getToken();
@@ -22,7 +21,7 @@ class AuthService {
     http.Response response = await requestBuilder(accessToken);
 
     if (response.statusCode == 401 && refreshToken != null) {
-      print('Access token expired or invalid, attempting to refresh...');
+      print('⚠️ Access token expired, attempting refresh...');
       try {
         final newTokens = await _refreshAccessToken(refreshToken);
         final newAccessToken = newTokens['accessToken'];
@@ -32,11 +31,11 @@ class AuthService {
         if (newRefreshToken != null) {
           await SecureStorage.saveRefreshToken(newRefreshToken);
         }
-        
-        // Retry the original request with the new access token
+
+        // ✅ Retry original request with the new token
         response = await requestBuilder(newAccessToken);
       } catch (e) {
-        print('Failed to refresh token: $e');
+        print('❌ Failed to refresh token: $e');
         rethrow;
       }
     }
@@ -44,8 +43,10 @@ class AuthService {
     return response;
   }
 
+  /// ✅ Refresh token logic
   Future<Map<String, dynamic>> _refreshAccessToken(String refreshToken) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshTokenEndpoint}');
+    final url =
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshTokenEndpoint}');
     final response = await _httpClient.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -59,13 +60,15 @@ class AuthService {
         'refreshToken': data['refreshToken'],
       };
     } else {
-      throw Exception('Failed to refresh token: ${response.statusCode} - ${response.body}');
+      throw Exception(
+          'Failed to refresh token: ${response.statusCode} - ${response.body}');
     }
   }
 
-  // New method: Step 1 of registration, sends the OTP
+  /// ✅ Step 1: Send OTP for registration
   Future<void> sendOtp(String email) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.registerEndpoint}');
+    final url =
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.registerEndpoint}');
     final response = await _httpClient.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -74,13 +77,16 @@ class AuthService {
 
     if (response.statusCode != 200) {
       final errorData = json.decode(response.body);
-      throw Exception('Failed to send OTP: ${errorData['msg'] ?? response.statusCode}');
+      throw Exception(
+          'Failed to send OTP: ${errorData['msg'] ?? response.statusCode}');
     }
   }
 
-  // New method: Step 2 of registration, verifies OTP and creates the user
-  Future<AuthResponse> verifyOtpAndRegister(String email, String otp, String username, String password) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.verifyOtpEndpoint}');
+  /// ✅ Step 2: Verify OTP & Complete Registration (Added userType)
+  Future<AuthResponse> verifyOtpAndRegister(
+      String email, String otp, String username, String password, String userType) async {
+    final url =
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.verifyOtpEndpoint}');
     final response = await _httpClient.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -89,6 +95,7 @@ class AuthService {
         'otp': otp,
         'username': username,
         'password': password,
+        'userType': userType, // ✅ Added userType for backend
       }),
     );
 
@@ -97,12 +104,15 @@ class AuthService {
       return AuthResponse.fromJson(data);
     } else {
       final errorData = json.decode(response.body);
-      throw Exception('Verification failed: ${errorData['msg'] ?? response.statusCode}');
+      throw Exception(
+          'Verification failed: ${errorData['msg'] ?? response.statusCode}');
     }
   }
-  
+
+  /// ✅ Login user
   Future<AuthResponse> loginUser(String email, String password) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
+    final url =
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}');
     final response = await _httpClient.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -114,20 +124,19 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final token = data['token'];
-      final user = User.fromJson(data['user']);
-      final refreshToken = data['refreshToken'];
-
-      return AuthResponse(token: token, user: user, refreshToken: refreshToken);
+      return AuthResponse.fromJson(data);
     } else {
       final errorData = json.decode(response.body);
-      throw Exception('Login failed: ${errorData['message'] ?? response.statusCode}');
+      throw Exception(
+          'Login failed: ${errorData['message'] ?? response.statusCode}');
     }
   }
 
+  /// ✅ Get authenticated user profile
   Future<User> getAuthUser() async {
     final response = await _authenticatedRequest((token) async {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.getAuthUserEndpoint}');
+      final url = Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.getAuthUserEndpoint}');
       return await _httpClient.get(
         url,
         headers: {
@@ -142,13 +151,16 @@ class AuthService {
       return User.fromJson(data);
     } else {
       final errorData = json.decode(response.body);
-      throw Exception('Failed to get authenticated user: ${errorData['message'] ?? response.statusCode}');
+      throw Exception(
+          'Failed to get authenticated user: ${errorData['message'] ?? response.statusCode}');
     }
   }
 
+  /// ✅ Create a new post
   Future<void> createPost(Map<String, dynamic> postData) async {
     final response = await _authenticatedRequest((token) async {
-      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.createPostEndpoint}');
+      final url = Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.createPostEndpoint}');
       return await _httpClient.post(
         url,
         headers: {
@@ -161,7 +173,8 @@ class AuthService {
 
     if (response.statusCode != 201) {
       final errorData = json.decode(response.body);
-      throw Exception('Failed to create post: ${errorData['message'] ?? response.statusCode}');
+      throw Exception(
+          'Failed to create post: ${errorData['message'] ?? response.statusCode}');
     }
   }
 }

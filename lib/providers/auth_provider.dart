@@ -1,4 +1,3 @@
-// myapp/providers/auth_provider.dart
 import 'package:flutter/material.dart';
 import 'package:myapp/models/auth_response_model.dart';
 import 'package:myapp/models/user_model.dart';
@@ -6,11 +5,10 @@ import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/socket_service.dart';
 import 'package:myapp/utils/secure_storage.dart';
 
-
 class AuthProvider extends ChangeNotifier {
   User? _currentUser;
   String? _token;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _error;
 
   final AuthService _authService = AuthService();
@@ -25,31 +23,38 @@ class AuthProvider extends ChangeNotifier {
     tryAutoLogin();
   }
 
+  /// ✅ Clear previous error message
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  /// ✅ Try auto login on app start
   Future<void> tryAutoLogin() async {
     _isLoading = true;
     notifyListeners();
 
-    final token = await SecureStorage.getToken();
+    try {
+      final token = await SecureStorage.getToken();
 
-    if (token != null) {
-      _token = token;
-      try {
+      if (token != null) {
+        _token = token;
         _currentUser = await _authService.getAuthUser();
-        print('✅ Auto-login successful for: ${_currentUser?.username}');
+        debugPrint('✅ Auto-login successful for: ${_currentUser?.username}');
         SocketService().connect(_token!);
-      } catch (e) {
-        print('❌ Auto-login failed, token might be expired: $e');
-        await logout();
+      } else {
+        debugPrint('⚠️ No token found for auto-login.');
       }
-    } else {
-      print('⚠️ No token found for auto-login.');
+    } catch (e) {
+      debugPrint('❌ Auto-login failed, token might be expired: $e');
+      await logout();
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // New method for Step 1: Sending the OTP
+  /// ✅ Send OTP for registration
   Future<bool> sendOtp(String email) async {
     _isLoading = true;
     _error = null;
@@ -57,11 +62,11 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       await _authService.sendOtp(email);
-      print('✅ OTP sent successfully to $email');
+      debugPrint('✅ OTP sent successfully to $email');
       return true;
     } catch (e) {
       _error = 'Failed to send OTP: ${e.toString()}';
-      print(_error);
+      debugPrint(_error);
       return false;
     } finally {
       _isLoading = false;
@@ -69,31 +74,28 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // New method for Step 2: Verifying the OTP and completing registration
-  Future<bool> verifyOtpAndRegister(String email, String otp, String username, String password) async {
+  /// ✅ Verify OTP and complete registration (with userType)
+  Future<bool> verifyOtpAndRegister(
+      String email, String otp, String username, String password, String userType) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final AuthResponse response = await _authService.verifyOtpAndRegister(email, otp, username, password);
-      
-      _token = response.token;
-      _currentUser = response.user;
+      final AuthResponse response = await _authService.verifyOtpAndRegister(
+        email,
+        otp,
+        username,
+        password,
+        userType, // ✅ Added userType
+      );
 
-      await SecureStorage.saveToken(_token!);
-      await SecureStorage.saveUserId(_currentUser!.id);
-      if (response.refreshToken != null) {
-        await SecureStorage.saveRefreshToken(response.refreshToken!);
-      }
-
-      SocketService().connect(_token!);
-
-      print('✅ Registration successful for: ${_currentUser?.username}');
+      await _saveAuthData(response);
+      debugPrint('✅ Registration successful for: ${_currentUser?.username}');
       return true;
     } catch (e) {
       _error = 'Registration failed: ${e.toString()}';
-      print(_error);
+      debugPrint(_error);
       return false;
     } finally {
       _isLoading = false;
@@ -101,29 +103,20 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// ✅ Login user
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-    
+
     try {
       final AuthResponse response = await _authService.loginUser(email, password);
-      _token = response.token;
-      _currentUser = response.user;
-
-      await SecureStorage.saveToken(_token!);
-      await SecureStorage.saveUserId(_currentUser!.id);
-      if (response.refreshToken != null) {
-        await SecureStorage.saveRefreshToken(response.refreshToken!);
-      }
-
-      SocketService().connect(_token!);
-
-      print('✅ Login successful: ${_currentUser?.username}');
+      await _saveAuthData(response);
+      debugPrint('✅ Login successful: ${_currentUser?.username}');
       return true;
     } catch (e) {
       _error = 'Login failed: ${e.toString()}';
-      print(_error);
+      debugPrint(_error);
       return false;
     } finally {
       _isLoading = false;
@@ -131,19 +124,33 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// ✅ Logout user and clear storage
   Future<void> logout() async {
     SocketService().disconnect();
-
     _token = null;
     _currentUser = null;
     await SecureStorage.clearAll();
-    
-    print('🚪 Logged out, socket disconnected, and storage cleared');
+    debugPrint('🚪 Logged out, socket disconnected, and storage cleared');
     notifyListeners();
   }
 
+  /// ✅ Update current user in provider
   void updateCurrentUser(User user) {
     _currentUser = user;
     notifyListeners();
+  }
+
+  /// ✅ Helper to save auth data and connect socket
+  Future<void> _saveAuthData(AuthResponse response) async {
+    _token = response.token;
+    _currentUser = response.user;
+
+    await SecureStorage.saveToken(_token!);
+    await SecureStorage.saveUserId(_currentUser!.id);
+    if (response.refreshToken != null) {
+      await SecureStorage.saveRefreshToken(response.refreshToken!);
+    }
+
+    SocketService().connect(_token!);
   }
 }

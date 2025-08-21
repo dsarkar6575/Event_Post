@@ -52,23 +52,18 @@ class PostProvider extends ChangeNotifier {
   // --- End Utility Methods ---
 
 
-  Future<void> fetchAllPosts() async {
-    if (_isLoading) return; // Prevent multiple simultaneous fetches
+  Future<void> fetchFeedPosts() async {
+  try {
     _isLoading = true;
+    final posts = await postService.getFeedPosts();
+    _posts = posts;
     _error = null;
-    notifyListeners(); // Notify to show general loading indicator
-
-    try {
-      _posts = await postService.getAllPosts();
-      print('DEBUG: Fetched ${_posts.length} all posts.');
-    } catch (e) {
-      _error = e.toString();
-      print('Fetch All Posts Error: $_error');
-    } finally {
-      _isLoading = false;
-      notifyListeners(); // Notify to update UI with fetched posts or error
-    }
+  } catch (e) {
+    _error = e.toString();
+  } finally {
+    _isLoading = false;
   }
+}
 
   Future<void> createPost({
     required String title,

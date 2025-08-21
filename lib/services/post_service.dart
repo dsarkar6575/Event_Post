@@ -25,6 +25,24 @@ class PostService {
     return MediaType(mimeTypeData[0], mimeTypeData[1]);
   }
 
+  Future<List<Post>> getFeedPosts() async {
+    try {
+      final response = await _apiService.get(ApiConstants.getFeedPostsEndpoint); 
+      // feed endpoint → http://localhost:5000/api/posts/feed
+
+      if (response is List) {
+        return response.map((postJson) => Post.fromJson(postJson)).toList();
+      } else if (response is Map<String, dynamic> && response.containsKey('error')) {
+        throw Exception('API Error: ${response['error']}');
+      } else {
+        throw Exception('Unexpected response format for feed posts.');
+      }
+    } catch (e) {
+      print('Error fetching feed posts: $e');
+      rethrow;
+    }
+  }
+
   Future<Post> createPost({
     required String title,
     required String description,
