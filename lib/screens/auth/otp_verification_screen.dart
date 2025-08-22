@@ -149,6 +149,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         : CustomButton(
                             text: 'Complete Registration',
                             onPressed: _verifyOtpAndRegister,
+                            color: const Color.fromARGB(255, 118, 111, 126),
                           );
                   },
                 ),
