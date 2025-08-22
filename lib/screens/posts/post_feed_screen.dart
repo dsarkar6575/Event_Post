@@ -15,8 +15,6 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch all posts when the screen is initialized.
-    // addPostFrameCallback ensures that the context is fully built before accessing it.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<PostProvider>(context, listen: false).fetchFeedPosts();
     });
@@ -24,27 +22,16 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
 
   // A method to handle manual refreshing of posts, typically triggered by RefreshIndicator.
   Future<void> _refreshPosts() async {
-    // Only call fetchAllPosts. The PostProvider's internal logic will update
-    // the lists, and the Consumer will rebuild.
     await Provider.of<PostProvider>(context, listen: false).fetchFeedPosts();
-    // No need to call fetchInterestedPosts or fetchAttendedPosts here
-    // unless you have separate tabs/views that rely on those lists
-    // and those lists aren't automatically updated by fetchAllPosts if your
-    // backend returns the full posts with interest/attended info.
-    // If they are on separate tabs, those tabs should call their own fetches.
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the current user's ID here, as it's unlikely to change frequently
-    // and doesn't depend on PostProvider's state.
     final currentUserId = Provider.of<AuthProvider>(context).currentUser?.id;
 
     return Scaffold(
       body: Consumer<PostProvider>(
         builder: (context, postProvider, child) {
-          // Display a loading indicator if posts are being fetched and the list is empty.
-          // This covers the initial fetch or a full refresh when no data is present yet.
           if (postProvider.isLoading && postProvider.posts.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -66,7 +53,7 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
               itemBuilder: (context, index) {
                 final post = postProvider.posts[index];
                 return PostCard(
-                  key: ValueKey(post.id), // IMPORTANT: Add ValueKey for efficient list updates
+                  key: ValueKey(post.id),
                   post: post,
                   currentUserId: currentUserId,
                   // Pass the specific loading status for THIS post
@@ -77,8 +64,6 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
                     if (currentUserId != null) {
                       try {
                         await postProvider.togglePostInterest(post.id, currentUserId);
-                        // No need to call fetchAllPosts() here.
-                        // PostProvider's internal logic updates _posts, and this Consumer rebuilds.
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Failed to toggle interest: ${e.toString()}')),
