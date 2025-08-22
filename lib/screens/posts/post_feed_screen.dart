@@ -54,9 +54,9 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
             return Center(child: Text('Error: ${postProvider.error}'));
           }
           // Display a message if no posts are available after loading.
-          if (postProvider.posts.isEmpty && !postProvider.isLoading) {
-            return const Center(child: Text('No posts yet. Be the first to create one!'));
-          }
+          // if (postProvider.posts.isEmpty && !postProvider.isLoading) {
+          //   return const Center(child: Text('No posts yet. Be the first to create one!'));
+          // }
 
           // Use RefreshIndicator to allow users to manually refresh the list.
           return RefreshIndicator(
