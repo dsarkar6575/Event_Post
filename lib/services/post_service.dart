@@ -83,9 +83,7 @@ class PostService {
       }
 
       return Post.fromJson(response['post']);
-    } catch (e, stackTrace) {
-      print('Error in createPost: $e');
-      print('StackTrace: $stackTrace');
+    } catch (e) {
       rethrow; // Re-throw to propagate to PostProvider
     }
   }
@@ -94,33 +92,21 @@ class PostService {
     try {
       final response = await _apiService.get(ApiConstants.getAllPostsEndpoint);
 
-      print('Response received in getAllPosts: $response');
-
       if (response is List) {
-        print('Response is a List. Mapping to Posts...');
         final List<Post> posts = response.map((postJson) {
           try {
             return Post.fromJson(postJson);
           } catch (e) {
-            print('Error parsing individual post JSON: $e');
-            print('Post JSON causing error: $postJson');
-            // Do not rethrow here, allow other posts to be parsed.
-            // Consider logging this error and returning null or a default post,
-            // or filter out invalid posts after mapping. For now, rethrow to highlight the issue.
-            rethrow; // Re-throwing here will stop the entire list from being processed.
-                     // If you want to skip malformed posts, catch and return null, then filter list.
+            rethrow; 
           }
         }).toList();
-        print('Successfully mapped to Posts. Count: ${posts.length}');
         return posts;
       } else if (response is Map<String, dynamic> && response.containsKey('error')) {
         throw Exception('API Error: ${response['error']}');
       } else {
-        print('Unexpected response format in getAllPosts: $response');
         throw Exception('Failed to load posts due to unexpected response format.');
       }
     } catch (e) {
-      print('Error fetching or processing posts: $e');
       rethrow;
     }
   }
@@ -311,4 +297,22 @@ class PostService {
       rethrow;
     }
   }
+
+  Future<List<Post>> getFeedPosts() async {
+  try {
+    final response = await _apiService.get(ApiConstants.feedPostsEndpoint);
+
+    if (response is List) {
+      return response.map((postJson) => Post.fromJson(postJson)).toList();
+    } else if (response is Map<String, dynamic> && response.containsKey('error')) {
+      throw Exception('API Error: ${response['error']}');
+    } else {
+      throw Exception('Failed to load feed posts: Invalid response format.');
+    }
+  }catch (e) {
+      print('Error fetching feed posts: $e');
+      rethrow;
+    
+  }
+}
 }
